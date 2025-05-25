@@ -16,17 +16,12 @@ jobs:
     - name: Extract version from tag
       run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
 
-    - name: Update AssemblyInfo version
-      run: |
-        $version = "${{ env.VERSION }}"
-        (Get-Content ./Properties/AssemblyInfo.cs) -replace '(?<=\[assembly: AssemblyVersion\(")[^"]+', $version | Set-Content ./Properties/AssemblyInfo.cs
-        (Get-Content ./Properties/AssemblyInfo.cs) -replace '(?<=\[assembly: AssemblyFileVersion\(")[^"]+', $version | Set-Content ./Properties/AssemblyInfo.cs
-
     - name: Restore NuGet packages
       run: nuget restore PluginUpdater.sln
 
-    - name: Build solution
-      run: msbuild PluginUpdater.sln /p:Configuration=Release
+    - name: Build
+      run: |
+        msbuild PluginUpdater.sln /p:Configuration=Release /p:AssemblyVersion=${{ env.VERSION }} /p:FileVersion=${{ env.VERSION }}
 
     - name: Create release
       uses: actions/create-release@v1
