@@ -3,7 +3,11 @@ name: Build, Test, and Release
 on:
   push:
     tags:
-      - 'v*.*.*'
+      - '*.*.*'
+
+env:
+  version: ${{ github.ref_name }}
+
 
 jobs:
   build_and_release:
@@ -16,6 +20,12 @@ jobs:
     - name: Extract version from tag
       run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
 
+    - name: Set version in version.info
+      run: |
+        $content = Get-Content version.info
+        $content = $content -replace '(?<=PluginUpdater:)[0-9\.]+', "${{ env.version }}"
+        Set-Content version.info $content
+
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1
 
@@ -24,7 +34,7 @@ jobs:
 
     - name: Build solution with version
       run: |
-        msbuild PluginUpdater.sln /p:Configuration=Release /p:AssemblyVersion=${{ env.VERSION }} /p:FileVersion=${{ env.VERSION }}
+        msbuild PluginUpdater.sln /p:Configuration=Release /p:AssemblyVersion=${{ env.version }} /p:FileVersion=${{ env.version }}
 
     - name: Create GitHub Release and Upload DLL
       uses: softprops/action-gh-release@v1
