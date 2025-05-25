@@ -29,7 +29,7 @@ jobs:
         git config user.email "github-actions[bot]@users.noreply.github.com"
         git add version.info
         git commit -m "Set version in version.info to ${{ env.version }}" || echo "No changes to commit"
-        git push
+        git push origin HEAD:main
 
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1
