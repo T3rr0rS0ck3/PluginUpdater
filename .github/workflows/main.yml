@@ -13,11 +13,6 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: '4.8.0'
-
     - name: Extract version from tag
       run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
 
@@ -41,4 +36,4 @@ jobs:
         tag_name: ${{ github.ref_name }}
         release_name: ${{ github.ref_name }}
         draft: false
-        prerelease: false
+        prerelease: true
