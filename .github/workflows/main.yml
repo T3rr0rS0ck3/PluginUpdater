@@ -26,14 +26,9 @@ jobs:
       run: |
         msbuild PluginUpdater.sln /p:Configuration=Release /p:AssemblyVersion=${{ env.VERSION }} /p:FileVersion=${{ env.VERSION }}
 
-    - name: Collect DLLs
-      run: |
-        mkdir artifacts
-        for /R bin\Release %f in (*.dll) do copy "%f" artifacts\
-
-    - name: Create GitHub Release and Upload DLLs
+    - name: Create GitHub Release and Upload DLL
       uses: softprops/action-gh-release@v1
       with:
-        files: artifacts/*.dll
+        files: bin\Release\PluginUpdater.dll
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
