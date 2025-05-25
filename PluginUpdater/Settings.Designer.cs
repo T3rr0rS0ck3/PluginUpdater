@@ -30,28 +30,28 @@
         {
             this.components = new System.ComponentModel.Container();
             this.dataGridView1 = new System.Windows.Forms.DataGridView();
-            this.nameDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.colDownloadUrl = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.fileVersionDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.LatestVersion = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.pluginInfoBindingSource = new System.Windows.Forms.BindingSource(this.components);
             this.btnOk = new System.Windows.Forms.Button();
             this.richTextBox1 = new System.Windows.Forms.RichTextBox();
             this.cbEnableUpdate = new System.Windows.Forms.CheckBox();
             this.cbEnableNotification = new System.Windows.Forms.CheckBox();
+            this.nameDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.colDownloadUrl = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.CurrentVersion = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.LatestVersion = new System.Windows.Forms.DataGridViewTextBoxColumn();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pluginInfoBindingSource)).BeginInit();
             this.SuspendLayout();
-            //
+            // 
             // dataGridView1
-            //
+            // 
             this.dataGridView1.AutoGenerateColumns = false;
             this.dataGridView1.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
             this.dataGridView1.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.dataGridView1.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.nameDataGridViewTextBoxColumn,
             this.colDownloadUrl,
-            this.fileVersionDataGridViewTextBoxColumn,
+            this.CurrentVersion,
             this.LatestVersion});
             this.dataGridView1.DataSource = this.pluginInfoBindingSource;
             this.dataGridView1.Location = new System.Drawing.Point(12, 197);
@@ -60,47 +60,13 @@
             this.dataGridView1.RowTemplate.Height = 28;
             this.dataGridView1.Size = new System.Drawing.Size(776, 390);
             this.dataGridView1.TabIndex = 0;
-            //
-            // nameDataGridViewTextBoxColumn
-            //
-            this.nameDataGridViewTextBoxColumn.DataPropertyName = "Name";
-            this.nameDataGridViewTextBoxColumn.HeaderText = "Name";
-            this.nameDataGridViewTextBoxColumn.MinimumWidth = 8;
-            this.nameDataGridViewTextBoxColumn.Name = "nameDataGridViewTextBoxColumn";
-            //
-            // colDownloadUrl
-            //
-            this.colDownloadUrl.DataPropertyName = "DownloadUrl";
-            this.colDownloadUrl.HeaderText = "Download URL";
-            this.colDownloadUrl.MinimumWidth = 8;
-            this.colDownloadUrl.Name = "colDownloadUrl";
-            //
-            // fileVersionDataGridViewTextBoxColumn
-            //
-            this.fileVersionDataGridViewTextBoxColumn.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.DisplayedCells;
-            this.fileVersionDataGridViewTextBoxColumn.DataPropertyName = "FileVersion";
-            this.fileVersionDataGridViewTextBoxColumn.HeaderText = "FileVersion";
-            this.fileVersionDataGridViewTextBoxColumn.MinimumWidth = 8;
-            this.fileVersionDataGridViewTextBoxColumn.Name = "fileVersionDataGridViewTextBoxColumn";
-            this.fileVersionDataGridViewTextBoxColumn.ReadOnly = true;
-            this.fileVersionDataGridViewTextBoxColumn.Width = 124;
-            //
-            // LatestVersion
-            //
-            this.LatestVersion.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.DisplayedCells;
-            this.LatestVersion.DataPropertyName = "LatestVersion";
-            this.LatestVersion.HeaderText = "LatestVersion";
-            this.LatestVersion.MinimumWidth = 8;
-            this.LatestVersion.Name = "LatestVersion";
-            this.LatestVersion.ReadOnly = true;
-            this.LatestVersion.Width = 144;
-            //
+            // 
             // pluginInfoBindingSource
-            //
+            // 
             this.pluginInfoBindingSource.DataSource = typeof(PluginUpdater.PluginInfo);
-            //
+            // 
             // btnOk
-            //
+            // 
             this.btnOk.Location = new System.Drawing.Point(688, 593);
             this.btnOk.Name = "btnOk";
             this.btnOk.Size = new System.Drawing.Size(100, 30);
@@ -108,9 +74,9 @@
             this.btnOk.Text = "Ok";
             this.btnOk.UseVisualStyleBackColor = true;
             this.btnOk.Click += new System.EventHandler(this.btnOk_Click);
-            //
+            // 
             // richTextBox1
-            //
+            // 
             this.richTextBox1.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.richTextBox1.Location = new System.Drawing.Point(12, 12);
             this.richTextBox1.Name = "richTextBox1";
@@ -120,9 +86,9 @@
             this.richTextBox1.Text = "The download URLs must be configured so that the automatic update of the plugins " +
     "works.  \n\n!!! IMPORTANT !!! \nThe URL must contain the placeholder “<version>” (w" +
     "ithout quotation marks)";
-            //
+            // 
             // cbEnableUpdate
-            //
+            // 
             this.cbEnableUpdate.AutoSize = true;
             this.cbEnableUpdate.Checked = true;
             this.cbEnableUpdate.CheckState = System.Windows.Forms.CheckState.Checked;
@@ -133,9 +99,9 @@
             this.cbEnableUpdate.Text = "Automatic update enabled";
             this.cbEnableUpdate.UseVisualStyleBackColor = true;
             this.cbEnableUpdate.CheckedChanged += new System.EventHandler(this.cbEnableUpdate_CheckedChanged);
-            //
+            // 
             // cbEnableNotification
-            //
+            // 
             this.cbEnableNotification.AutoSize = true;
             this.cbEnableNotification.Checked = true;
             this.cbEnableNotification.CheckState = System.Windows.Forms.CheckState.Checked;
@@ -146,9 +112,43 @@
             this.cbEnableNotification.Text = "Show Notification";
             this.cbEnableNotification.UseVisualStyleBackColor = true;
             this.cbEnableNotification.CheckedChanged += new System.EventHandler(this.cbEnableNotification_CheckedChanged);
-            //
+            // 
+            // nameDataGridViewTextBoxColumn
+            // 
+            this.nameDataGridViewTextBoxColumn.DataPropertyName = "Name";
+            this.nameDataGridViewTextBoxColumn.HeaderText = "Name";
+            this.nameDataGridViewTextBoxColumn.MinimumWidth = 8;
+            this.nameDataGridViewTextBoxColumn.Name = "nameDataGridViewTextBoxColumn";
+            // 
+            // colDownloadUrl
+            // 
+            this.colDownloadUrl.DataPropertyName = "DownloadUrl";
+            this.colDownloadUrl.HeaderText = "Download URL";
+            this.colDownloadUrl.MinimumWidth = 8;
+            this.colDownloadUrl.Name = "colDownloadUrl";
+            // 
+            // CurrentVersion
+            // 
+            this.CurrentVersion.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.DisplayedCells;
+            this.CurrentVersion.DataPropertyName = "CurrentVersion";
+            this.CurrentVersion.HeaderText = "Current Version";
+            this.CurrentVersion.MinimumWidth = 8;
+            this.CurrentVersion.Name = "CurrentVersion";
+            this.CurrentVersion.ReadOnly = true;
+            this.CurrentVersion.Width = 144;
+            // 
+            // LatestVersion
+            // 
+            this.LatestVersion.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.DisplayedCells;
+            this.LatestVersion.DataPropertyName = "LatestVersion";
+            this.LatestVersion.HeaderText = "Latest Version";
+            this.LatestVersion.MinimumWidth = 8;
+            this.LatestVersion.Name = "LatestVersion";
+            this.LatestVersion.ReadOnly = true;
+            this.LatestVersion.Width = 136;
+            // 
             // Settings
-            //
+            // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 634);
@@ -175,12 +175,13 @@
         private System.Windows.Forms.DataGridView dataGridView1;
         private System.Windows.Forms.BindingSource pluginInfoBindingSource;
         private System.Windows.Forms.Button btnOk;
-        private System.Windows.Forms.DataGridViewTextBoxColumn nameDataGridViewTextBoxColumn;
-        private System.Windows.Forms.DataGridViewTextBoxColumn colDownloadUrl;
         private System.Windows.Forms.DataGridViewTextBoxColumn fileVersionDataGridViewTextBoxColumn;
-        private System.Windows.Forms.DataGridViewTextBoxColumn LatestVersion;
         private System.Windows.Forms.RichTextBox richTextBox1;
         private System.Windows.Forms.CheckBox cbEnableUpdate;
         private System.Windows.Forms.CheckBox cbEnableNotification;
+        private System.Windows.Forms.DataGridViewTextBoxColumn nameDataGridViewTextBoxColumn;
+        private System.Windows.Forms.DataGridViewTextBoxColumn colDownloadUrl;
+        private System.Windows.Forms.DataGridViewTextBoxColumn CurrentVersion;
+        private System.Windows.Forms.DataGridViewTextBoxColumn LatestVersion;
     }
 }
