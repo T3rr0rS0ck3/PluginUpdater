@@ -16,10 +16,13 @@ jobs:
     - name: Extract version from tag
       run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
 
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v1
+
     - name: Restore NuGet packages
       run: nuget restore PluginUpdater.sln
 
-    - name: Build
+    - name: Build solution with version
       run: |
         msbuild PluginUpdater.sln /p:Configuration=Release /p:AssemblyVersion=${{ env.VERSION }} /p:FileVersion=${{ env.VERSION }}
 
