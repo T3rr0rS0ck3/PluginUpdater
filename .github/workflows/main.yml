@@ -37,6 +37,13 @@ jobs:
     - name: Restore NuGet packages
       run: nuget restore PluginUpdater.sln
 
+    - name: Set version in AssemblyInfo
+      shell: pwsh
+      run: |
+        $asmInfo = Get-ChildItem -Path . -Recurse -Filter AssemblyInfo.cs | Select-Object -First 1
+        (Get-Content $asmInfo.FullName) -replace '(?<=AssemblyVersion\(")[^"]+', "${{ env.version }}" | Set-Content $asmInfo.FullName
+        (Get-Content $asmInfo.FullName) -replace '(?<=AssemblyFileVersion\(")[^"]+', "${{ env.version }}" | Set-Content $asmInfo.FullName
+
     - name: Build solution with version
       run: |
         msbuild PluginUpdater.sln /p:Configuration=Release /p:AssemblyVersion=${{ env.version }} /p:FileVersion=${{ env.version }}
