@@ -29,6 +29,6 @@ jobs:
     - name: Create GitHub Release and Upload DLL
       uses: softprops/action-gh-release@v1
       with:
-        files: release/PluginUpdater.dll
+        files: ${{ github.workspace }}/release/PluginUpdater.dll
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
