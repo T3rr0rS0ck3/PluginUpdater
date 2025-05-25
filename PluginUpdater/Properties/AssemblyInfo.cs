@@ -1,11 +1,10 @@
 ﻿using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Plugin Updater")]
+[assembly: AssemblyTitle("PluginUpdater")]
 [assembly: AssemblyDescription("Updates all Plugins")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("T3rr0rS0ck3")]
