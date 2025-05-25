@@ -17,14 +17,19 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Extract version from tag
-      run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
-
     - name: Set version in version.info
       run: |
         $content = Get-Content version.info
         $content = $content -replace '(?<=PluginUpdater:)[0-9\.]+', "${{ env.version }}"
         Set-Content version.info $content
+
+    - name: Commit and push updated version.info
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add version.info
+        git commit -m "Set version in version.info to ${{ env.version }}" || echo "No changes to commit"
+        git push
 
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1
