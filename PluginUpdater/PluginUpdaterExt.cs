@@ -13,7 +13,7 @@ namespace PluginUpdater
     {
         private Task _updateTask;
 
-        public override string UpdateUrl => "https://github.com/T3rr0rS0ck3/PluginUpdater/blob/main/version.info";
+        public override string UpdateUrl => "https://raw.githubusercontent.com/T3rr0rS0ck3/PluginUpdater/refs/heads/main/version.info";
 
         /// <summary>
         /// Initializes the plugin with the provided host.
