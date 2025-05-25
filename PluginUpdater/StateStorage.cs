@@ -18,7 +18,13 @@ namespace PluginUpdater
         /// <summary>
         /// Name of the plugin updater, used for identification and display purposes.
         /// </summary>
-        public string Name { get; set; }
+        public string Name
+        {
+            get
+            {
+                return "PluginUpdater";
+            }
+        }
 
         /// <summary>
         /// Host for the plugin, which provides access to the KeePass application and its features.
@@ -54,7 +60,6 @@ namespace PluginUpdater
         private StateStorage()
         {
             this.Settings = new SettingsItem();
-            this.Name = "Plugin Updater";
             this.Host = null; // This should be set by the plugin host when the plugin is loaded
             this.SettingsForm = null;
             this.RestartRequired = false;

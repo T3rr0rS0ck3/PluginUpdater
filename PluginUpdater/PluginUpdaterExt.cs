@@ -26,10 +26,6 @@ namespace PluginUpdater
                 return false;
             }
 
-            Assembly assembly = Assembly.GetExecutingAssembly();
-            var productAttr = assembly.GetCustomAttribute<AssemblyTitleAttribute>();
-            StateStorage.Instance().Name = productAttr?.Title ?? "Plugin Updater";
-
             StateStorage.Instance().SettingsForm = new Settings
             {
                 StartPosition = System.Windows.Forms.FormStartPosition.CenterParent,
