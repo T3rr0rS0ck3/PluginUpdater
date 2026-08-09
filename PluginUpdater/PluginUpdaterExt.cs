@@ -12,8 +12,6 @@ namespace PluginUpdater
     {
         private Task _updateTask;
         private ToolStripMenuItem _updateNowMenuItem;
-        private bool _automaticUpdateStarted;
-        private bool _terminated;
 
         /// <summary>
         /// Gets the update URL used by KeePass to check for new PluginUpdater releases.
@@ -35,10 +33,6 @@ namespace PluginUpdater
             }
 
             StateStorage.Instance().Host = host;
-            if (host.MainWindow != null)
-            {
-                host.MainWindow.Shown += this.MainWindow_Shown;
-            }
 
             return true;
         }
@@ -51,80 +45,8 @@ namespace PluginUpdater
         /// </summary>
         public override void Terminate()
         {
-            if (StateStorage.Instance().Host != null && StateStorage.Instance().Host.MainWindow != null)
-            {
-                StateStorage.Instance().Host.MainWindow.Shown -= this.MainWindow_Shown;
-            }
-
             this._updateTask = null;
             this._updateNowMenuItem = null;
-            this._terminated = true;
-        }
-
-        /// <summary>
-        /// Starts the automatic update check once KeePass has finished showing its main window.
-        /// </summary>
-        private void MainWindow_Shown(object sender, EventArgs e)
-        {
-            Form mainWindow = sender as Form;
-            if (mainWindow != null)
-            {
-                mainWindow.Shown -= this.MainWindow_Shown;
-            }
-
-            this.StartAutomaticUpdate();
-        }
-
-        /// <summary>
-        /// Runs one delayed automatic update check without surfacing errors to KeePass startup.
-        /// </summary>
-        private async void StartAutomaticUpdate()
-        {
-            if (this._automaticUpdateStarted)
-            {
-                return;
-            }
-
-            this._automaticUpdateStarted = true;
-
-            try
-            {
-                if (!await this.WaitForOpenDatabase())
-                {
-                    return;
-                }
-
-                await this.StartUpdate(false);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("PluginUpdater automatic update failed: {0}", ex);
-            }
-        }
-
-        /// <summary>
-        /// Waits until a KeePass database is open before running automatic updates.
-        /// </summary>
-        private async Task<bool> WaitForOpenDatabase()
-        {
-            for (int attempt = 0; attempt < 120; attempt++)
-            {
-                if (this._terminated)
-                {
-                    return false;
-                }
-
-                if (StateStorage.Instance().Host != null &&
-                    StateStorage.Instance().Host.Database != null &&
-                    StateStorage.Instance().Host.Database.IsOpen)
-                {
-                    return true;
-                }
-
-                await Task.Delay(5000);
-            }
-
-            return false;
         }
 
         /// <summary>

@@ -3,7 +3,9 @@ using KeePass.Forms;
 using KeePass.Plugins;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
 using System.Reflection;
@@ -230,6 +232,7 @@ namespace PluginUpdater
                 Uri downloadUri = new Uri(downloadUrl);
                 string filename = GetNormalizedArtifactFileName(downloadUri, pluginInfo.LatestVersionStr);
                 bool isZip = downloadUri.AbsolutePath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase);
+                bool isPlgx = downloadUri.AbsolutePath.EndsWith(".plgx", StringComparison.OrdinalIgnoreCase);
                 try
                 {
                     using (HttpClient httpClient = new HttpClient())
@@ -256,6 +259,10 @@ namespace PluginUpdater
                         this.updatedPlugins.Add(pluginInfo.Name); // Add to the list of updated plugins
 
                         Console.WriteLine("Updated {0} to version {1}", pluginInfo.Name, pluginInfo.CurrentVersionStr);
+                        if (isPlgx)
+                        {
+                            SchedulePluginCacheCleanupAfterKeePassExit();
+                        }
 
                         StateStorage.Instance().RestartRequired = true; // Indicate that a restart is required to apply the update
                     }
@@ -264,6 +271,50 @@ namespace PluginUpdater
                 {
                     Console.WriteLine("Error updating {0}: {1}", pluginInfo.Name, ex.Message);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Schedules a full KeePass PLGX cache cleanup after the current KeePass process exits.
+        /// </summary>
+        private static void SchedulePluginCacheCleanupAfterKeePassExit()
+        {
+            string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            if (string.IsNullOrEmpty(localAppData))
+            {
+                return;
+            }
+
+            string pluginCacheDir = Path.Combine(localAppData, "KeePass", "PluginCache");
+            if (string.IsNullOrEmpty(pluginCacheDir))
+            {
+                return;
+            }
+
+            int processId = Process.GetCurrentProcess().Id;
+            string escapedPluginCacheDir = pluginCacheDir.Replace("'", "''");
+            string script = string.Format(
+                "Wait-Process -Id {0} -ErrorAction SilentlyContinue; Start-Sleep -Seconds 1; Remove-Item -LiteralPath '{1}' -Recurse -Force -ErrorAction SilentlyContinue",
+                processId,
+                escapedPluginCacheDir);
+            string encodedScript = Convert.ToBase64String(Encoding.Unicode.GetBytes(script));
+
+            try
+            {
+                ProcessStartInfo startInfo = new ProcessStartInfo
+                {
+                    FileName = "powershell.exe",
+                    Arguments = "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -EncodedCommand " + encodedScript,
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    WindowStyle = ProcessWindowStyle.Hidden
+                };
+
+                Process.Start(startInfo);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Could not schedule plugin cache cleanup: {0}", ex.Message);
             }
         }
 
@@ -376,61 +427,37 @@ namespace PluginUpdater
         /// </summary>
         private static void ExtractZipFile(string zipFilePath, string destinationDirectory)
         {
-            Assembly compressionAssembly = Assembly.Load("System.IO.Compression");
-            Type zipArchiveType = compressionAssembly.GetType("System.IO.Compression.ZipArchive");
-            Type zipArchiveModeType = compressionAssembly.GetType("System.IO.Compression.ZipArchiveMode");
-
-            if (zipArchiveType == null || zipArchiveModeType == null)
-            {
-                throw new InvalidOperationException("ZIP support is not available.");
-            }
-
             string destinationRoot = Path.GetFullPath(destinationDirectory.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar);
 
             using (FileStream zipFileStream = new FileStream(zipFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (ZipArchive archive = new ZipArchive(zipFileStream, ZipArchiveMode.Read))
             {
-                object zipArchiveMode = Enum.ToObject(zipArchiveModeType, 0);
-                object archive = Activator.CreateInstance(zipArchiveType, zipFileStream, zipArchiveMode);
-
-                try
+                foreach (ZipArchiveEntry entry in archive.Entries)
                 {
-                    dynamic archiveDynamic = archive;
-                    foreach (object entry in archiveDynamic.Entries)
+                    string entryPath = entry.FullName.Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar);
+                    string destinationPath = Path.GetFullPath(Path.Combine(destinationDirectory, entryPath));
+
+                    if (!destinationPath.StartsWith(destinationRoot, StringComparison.OrdinalIgnoreCase))
                     {
-                        dynamic entryDynamic = entry;
-                        string entryPath = ((string)entryDynamic.FullName).Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar);
-                        string destinationPath = Path.GetFullPath(Path.Combine(destinationDirectory, entryPath));
-
-                        if (!destinationPath.StartsWith(destinationRoot, StringComparison.OrdinalIgnoreCase))
-                        {
-                            continue;
-                        }
-
-                        if (string.IsNullOrEmpty((string)entryDynamic.Name))
-                        {
-                            Directory.CreateDirectory(destinationPath);
-                            continue;
-                        }
-
-                        string directoryName = Path.GetDirectoryName(destinationPath);
-                        if (!string.IsNullOrEmpty(directoryName))
-                        {
-                            Directory.CreateDirectory(directoryName);
-                        }
-
-                        using (Stream entryStream = (Stream)entryDynamic.Open())
-                        using (FileStream destinationStream = new FileStream(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None))
-                        {
-                            entryStream.CopyTo(destinationStream);
-                        }
+                        continue;
                     }
-                }
-                finally
-                {
-                    IDisposable disposableArchive = archive as IDisposable;
-                    if (disposableArchive != null)
+
+                    if (string.IsNullOrEmpty(entry.Name))
                     {
-                        disposableArchive.Dispose();
+                        Directory.CreateDirectory(destinationPath);
+                        continue;
+                    }
+
+                    string directoryName = Path.GetDirectoryName(destinationPath);
+                    if (!string.IsNullOrEmpty(directoryName))
+                    {
+                        Directory.CreateDirectory(directoryName);
+                    }
+
+                    using (Stream entryStream = entry.Open())
+                    using (FileStream destinationStream = new FileStream(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None))
+                    {
+                        entryStream.CopyTo(destinationStream);
                     }
                 }
             }
