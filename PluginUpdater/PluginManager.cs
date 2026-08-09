@@ -20,7 +20,7 @@ namespace PluginUpdater
     /// </summary>
     public class PluginManager
     {
-        private const string PluginUpdaterDownloadUrl = "https://github.com/T3rr0rS0ck3/PluginUpdater/releases/download/%3Cversion%3E/PluginUpdater.plgx";
+        private const string PluginUpdaterDownloadUrl = "https://github.com/T3rr0rS0ck3/PluginUpdater/releases/download/<version>/PluginUpdater.plgx";
         private static PluginManager _instance;
         private static readonly object _lock = new object();
         private IList<string> updatedPlugins = new List<string>();
