@@ -5,6 +5,9 @@ on:
     tags:
       - '*.*.*'
 
+permissions:
+  contents: write
+
 env:
   version: ${{ github.ref_name }}
 
@@ -35,6 +38,20 @@ jobs:
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1
 
+    - name: Download KeePass portable package
+      shell: pwsh
+      run: |
+        $keepassVersion = '2.58'
+        $keepassZip = Join-Path $env:RUNNER_TEMP "KeePass-$keepassVersion.zip"
+        $keepassDir = Join-Path $env:RUNNER_TEMP "KeePass-$keepassVersion"
+        $keepassUrl = "https://sourceforge.net/projects/keepass/files/KeePass%202.x/$keepassVersion/KeePass-$keepassVersion.zip/download"
+
+        Invoke-WebRequest -Uri $keepassUrl -OutFile $keepassZip
+        Expand-Archive -Path $keepassZip -DestinationPath $keepassDir -Force
+
+        New-Item -ItemType Directory -Force -Path (Join-Path $env:GITHUB_WORKSPACE 'dlls') | Out-Null
+        Copy-Item -Path (Join-Path $keepassDir 'KeePass.exe') -Destination (Join-Path $env:GITHUB_WORKSPACE 'dlls\KeePass.exe') -Force
+
     - name: Restore NuGet packages
       run: nuget restore PluginUpdater.sln
 
@@ -49,9 +66,66 @@ jobs:
       run: |
         msbuild PluginUpdater.sln /p:Configuration=Release /p:AssemblyVersion=${{ env.version }} /p:FileVersion=${{ env.version }}
 
-    - name: Create GitHub Release and Upload DLL
+    - name: Clean plugin source output folders
+      shell: pwsh
+      run: |
+        Remove-Item -Recurse -Force (Join-Path $env:GITHUB_WORKSPACE 'PluginUpdater\bin') -ErrorAction SilentlyContinue
+        Remove-Item -Recurse -Force (Join-Path $env:GITHUB_WORKSPACE 'PluginUpdater\obj') -ErrorAction SilentlyContinue
+
+    - name: Create PLGX package
+      shell: pwsh
+      run: |
+        $keepassExe = Join-Path $env:GITHUB_WORKSPACE 'dlls\KeePass.exe'
+        $pluginSourceDir = Join-Path $env:GITHUB_WORKSPACE 'PluginUpdater'
+
+        & $keepassExe --plgx-create $pluginSourceDir --plgx-prereq-kp:2.58 --plgx-prereq-net:4.8
+
+        $plgx = Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse -Filter *.plgx | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+        if (-not $plgx) {
+          throw 'PLGX file was not created.'
+        }
+
+        New-Item -ItemType Directory -Force -Path (Join-Path $env:GITHUB_WORKSPACE 'release') | Out-Null
+        Copy-Item -Path $plgx.FullName -Destination (Join-Path $env:GITHUB_WORKSPACE 'release\PluginUpdater.plgx') -Force
+
+    - name: Generate release notes
+      shell: pwsh
+      run: |
+        git fetch --tags --force
+
+        $currentTag = "${{ env.version }}"
+        $tags = git tag --sort=-creatordate
+        $previousTag = $tags | Where-Object { $_ -ne $currentTag } | Select-Object -First 1
+
+        $releaseNotes = New-Object System.Text.StringBuilder
+        [void]$releaseNotes.AppendLine("## PluginUpdater $currentTag")
+        [void]$releaseNotes.AppendLine("")
+
+        if ($previousTag) {
+          [void]$releaseNotes.AppendLine("Changes since $previousTag:")
+          [void]$releaseNotes.AppendLine("")
+          $commits = git log "$previousTag..HEAD" --pretty=format:"- %s (%h)"
+        }
+        else {
+          [void]$releaseNotes.AppendLine("Changes:")
+          [void]$releaseNotes.AppendLine("")
+          $commits = git log --pretty=format:"- %s (%h)"
+        }
+
+        if (-not $commits) {
+          [void]$releaseNotes.AppendLine("- No changes recorded.")
+        }
+        else {
+          $commits | ForEach-Object { [void]$releaseNotes.AppendLine($_) }
+        }
+
+        $releaseNotesPath = Join-Path $env:GITHUB_WORKSPACE 'release-notes.md'
+        Set-Content -Path $releaseNotesPath -Value $releaseNotes.ToString() -Encoding utf8
+
+    - name: Create GitHub Release and Upload artifact
       uses: softprops/action-gh-release@v1
       with:
-        files: release/PluginUpdater.dll
+        files: release/PluginUpdater.plgx
+        body_path: release-notes.md
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
