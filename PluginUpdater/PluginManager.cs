@@ -39,6 +39,9 @@ namespace PluginUpdater
             }
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PluginManager"/> class.
+        /// </summary>
         private PluginManager()
         {
             this.updatedPlugins = new List<string>();
@@ -63,6 +66,9 @@ namespace PluginUpdater
         /// Retrieves the list of plugins using reflection to access the private PluginManager property of the MainForm.
         /// </summary>
         /// <returns></returns>
+        /// <summary>
+        /// Collects the currently loaded KeePass plugins and converts them into updater metadata.
+        /// </summary>
         private IList<PluginInfo> getPluginList()
         {
             List<PluginInfo> plugins = new List<PluginInfo>();
@@ -116,6 +122,9 @@ namespace PluginUpdater
             return Enumerable.Empty<PluginInfo>().ToList();
         }
 
+        /// <summary>
+        /// Downloads and installs plugin updates that were identified as newer versions.
+        /// </summary>
         private async Task updatePlugins(bool forceUpdate)
         {
             if (!forceUpdate && !StateStorage.Instance().Settings.AdditionalSettings.IsUpdateEnabled)
@@ -174,6 +183,9 @@ namespace PluginUpdater
             }
         }
 
+        /// <summary>
+        /// Builds a normalized artifact file name by removing the version suffix from the downloaded file name when possible.
+        /// </summary>
         private static string GetNormalizedArtifactFileName(Uri downloadUri, string version)
         {
             string fileName = Path.GetFileName(downloadUri.LocalPath);
@@ -194,6 +206,9 @@ namespace PluginUpdater
             return nameWithoutExtension + extension;
         }
 
+        /// <summary>
+        /// Removes existing files or folders that match the same plugin base name as the new artifact.
+        /// </summary>
         private static void RemoveExistingPluginArtifacts(string pluginDir, string newFileName)
         {
             string targetBaseName = NormalizeArtifactBaseName(newFileName);
@@ -219,6 +234,9 @@ namespace PluginUpdater
             }
         }
 
+        /// <summary>
+        /// Normalizes an artifact file name to a version-independent base name.
+        /// </summary>
         private static string NormalizeArtifactBaseName(string fileName)
         {
             string nameWithoutExtension = Path.GetFileNameWithoutExtension(fileName ?? string.Empty);
@@ -230,6 +248,9 @@ namespace PluginUpdater
             return Regex.Replace(nameWithoutExtension, @"([\s\-_]?v?\d+(?:\.\d+){1,4})$", string.Empty, RegexOptions.IgnoreCase).TrimEnd(' ', '-', '_');
         }
 
+        /// <summary>
+        /// Extracts a ZIP package into the plugin directory.
+        /// </summary>
         private static void ExtractZipFile(string zipFilePath, string destinationDirectory)
         {
             Assembly compressionAssembly = Assembly.Load("System.IO.Compression");
@@ -292,6 +313,9 @@ namespace PluginUpdater
             }
         }
 
+        /// <summary>
+        /// Shows the restart notification if updates were applied and notifications are enabled.
+        /// </summary>
         private void restartApplication()
         {
             if (StateStorage.Instance().RestartRequired && StateStorage.Instance().Settings.AdditionalSettings.ShowUpdateNotification)
@@ -309,6 +333,9 @@ namespace PluginUpdater
         /// Checks for updates for each plugin in the provided list by making HTTP requests to their update URLs.
         /// </summary>
         /// <returns></returns>
+        /// <summary>
+        /// Checks all configured plugins for newer versions by querying their update endpoints.
+        /// </summary>
         private async Task checkForPluginUpdates()
         {
             using (HttpClient httpClient = new HttpClient())
@@ -343,6 +370,9 @@ namespace PluginUpdater
             }
         }
 
+        /// <summary>
+        /// Loads persisted settings from the KeePass custom configuration storage.
+        /// </summary>
         private void loadSettings()
         {
             string settings = StateStorage.Instance().Host.CustomConfig.GetString("PluginUpdater");
@@ -372,6 +402,9 @@ namespace PluginUpdater
         /// <summary>
         /// Saves the current settings to the custom configuration of the plugin host.
         /// </summary>
+        /// <summary>
+        /// Serializes the current settings and stores them in the KeePass custom configuration.
+        /// </summary>
         public void SaveSettings()
         {
             string pluginsSettings = JsonConvert.SerializeObject(StateStorage.Instance().Settings);
@@ -385,6 +418,9 @@ namespace PluginUpdater
         /// </summary>
         /// <param name="pluginName"></param>
         /// <param name="downloadUrl"></param>
+        /// <summary>
+        /// Updates the configured download URL for a single plugin.
+        /// </summary>
         public void SetDownloadUrl(string pluginName, string downloadUrl)
         {
             StateStorage.Instance().Settings.PluginList.FirstOrDefault(p => p.Name == pluginName).DownloadUrl = downloadUrl;

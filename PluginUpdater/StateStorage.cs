@@ -57,6 +57,9 @@ namespace PluginUpdater
             }
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="StateStorage"/> class.
+        /// </summary>
         private StateStorage()
         {
             this.Settings = new SettingsItem();

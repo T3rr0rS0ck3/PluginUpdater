@@ -6,13 +6,16 @@ using System.Windows.Forms;
 namespace PluginUpdater
 {
     /// <summary>
-    /// Plugin Updater for KeePass
+    /// KeePass plugin entry point that wires the updater into the host application.
     /// </summary>
     public sealed class PluginUpdaterExt : Plugin
     {
         private Task _updateTask;
         private ToolStripMenuItem _updateNowMenuItem;
 
+        /// <summary>
+        /// Gets the update URL used by KeePass to check for new PluginUpdater releases.
+        /// </summary>
         public override string UpdateUrl => "https://raw.githubusercontent.com/T3rr0rS0ck3/PluginUpdater/refs/heads/main/version.info";
 
         /// <summary>
@@ -42,6 +45,9 @@ namespace PluginUpdater
         /// <summary>
         /// Terminates the plugin, cleaning up resources and event handlers.
         /// </summary>
+        /// <summary>
+        /// Cleans up plugin resources before KeePass unloads the plugin.
+        /// </summary>
         public override void Terminate()
         {
             if (this._updateTask != null)
@@ -50,6 +56,9 @@ namespace PluginUpdater
             }
         }
 
+        /// <summary>
+        /// Starts an automatic update check when the KeePass UI state changes.
+        /// </summary>
         private async void MainWindow_UIStateUpdated(object sender, EventArgs e)
         {
             await this.StartUpdate(false);
@@ -59,6 +68,9 @@ namespace PluginUpdater
         /// Returns a menu item for the plugin in the specified menu type.
         /// </summary>
         /// <returns></returns>
+        /// <summary>
+        /// Returns the plugin menu entry for the KeePass main menu.
+        /// </summary>
         public override ToolStripMenuItem GetMenuItem(PluginMenuType t)
         {
             // Provide a menu item for the main location(s)
@@ -78,16 +90,25 @@ namespace PluginUpdater
             return null; // No menu items in other locations
         }
 
+        /// <summary>
+        /// Opens the settings dialog.
+        /// </summary>
         private void OnOptionsClicked(object sender, EventArgs e)
         {
             StateStorage.Instance().SettingsForm.ShowDialog(StateStorage.Instance().Host.MainWindow);
         }
 
+        /// <summary>
+        /// Starts a manual update check and installation.
+        /// </summary>
         private async void OnUpdateNowClicked(object sender, EventArgs e)
         {
             await this.StartUpdate(true);
         }
 
+        /// <summary>
+        /// Runs the update workflow and prevents concurrent executions.
+        /// </summary>
         private async Task StartUpdate(bool forceUpdate)
         {
             if (this._updateTask != null && !this._updateTask.IsCompleted)
