@@ -46,7 +46,13 @@ jobs:
         $keepassDir = Join-Path $env:RUNNER_TEMP "KeePass-$keepassVersion"
         $keepassUrl = "https://sourceforge.net/projects/keepass/files/KeePass%202.x/$keepassVersion/KeePass-$keepassVersion.zip/download"
 
-        Invoke-WebRequest -Uri $keepassUrl -OutFile $keepassZip
+        curl.exe -L --fail --retry 3 --retry-delay 2 -o $keepassZip $keepassUrl
+
+        $fileInfo = Get-Item $keepassZip -ErrorAction Stop
+        if ($fileInfo.Length -lt 1000000) {
+          throw "Downloaded KeePass archive looks invalid: $($fileInfo.Length) bytes."
+        }
+
         Expand-Archive -Path $keepassZip -DestinationPath $keepassDir -Force
 
         New-Item -ItemType Directory -Force -Path (Join-Path $env:GITHUB_WORKSPACE 'dlls') | Out-Null
