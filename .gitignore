@@ -36,7 +36,11 @@ ScaffoldingReadMe.txt
 # NuGet Symbol Packages
 *.snupkg
 
+# KeePass plugin packages
+*.plgx
+
 # Others
+*.csproj.user
 ~$*
 *~
 CodeCoverage/
