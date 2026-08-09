@@ -58,9 +58,6 @@ jobs:
         New-Item -ItemType Directory -Force -Path (Join-Path $env:GITHUB_WORKSPACE 'dlls') | Out-Null
         Copy-Item -Path (Join-Path $keepassDir 'KeePass.exe') -Destination (Join-Path $env:GITHUB_WORKSPACE 'dlls\KeePass.exe') -Force
 
-    - name: Restore NuGet packages
-      run: nuget restore PluginUpdater.sln
-
     - name: Set version in AssemblyInfo
       shell: pwsh
       run: |
@@ -77,22 +74,33 @@ jobs:
       run: |
         Remove-Item -Recurse -Force (Join-Path $env:GITHUB_WORKSPACE 'PluginUpdater\bin') -ErrorAction SilentlyContinue
         Remove-Item -Recurse -Force (Join-Path $env:GITHUB_WORKSPACE 'PluginUpdater\obj') -ErrorAction SilentlyContinue
+        Remove-Item -Force (Join-Path $env:GITHUB_WORKSPACE 'PluginUpdater\*.csproj.user') -ErrorAction SilentlyContinue
 
     - name: Create PLGX package
       shell: pwsh
       run: |
         $keepassExe = Join-Path $env:GITHUB_WORKSPACE 'dlls\KeePass.exe'
         $pluginSourceDir = Join-Path $env:GITHUB_WORKSPACE 'PluginUpdater'
+        $releaseDir = Join-Path $env:GITHUB_WORKSPACE 'release'
 
         & $keepassExe --plgx-create $pluginSourceDir --plgx-prereq-kp:2.58 --plgx-prereq-net:4.8
 
-        $plgx = Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse -Filter *.plgx | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+        $plgx = $null
+        for ($i = 0; $i -lt 30; $i++) {
+          $plgx = Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse -Filter *.plgx | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          if ($plgx) {
+            break
+          }
+
+          Start-Sleep -Seconds 1
+        }
+
         if (-not $plgx) {
           throw 'PLGX file was not created.'
         }
 
-        New-Item -ItemType Directory -Force -Path (Join-Path $env:GITHUB_WORKSPACE 'release') | Out-Null
-        Copy-Item -Path $plgx.FullName -Destination (Join-Path $env:GITHUB_WORKSPACE 'release\PluginUpdater.plgx') -Force
+        New-Item -ItemType Directory -Force -Path $releaseDir | Out-Null
+        Copy-Item -Path $plgx.FullName -Destination (Join-Path $releaseDir 'PluginUpdater.plgx') -Force
 
     - name: Generate release notes
       shell: pwsh

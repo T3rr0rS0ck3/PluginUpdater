@@ -3,16 +3,19 @@
     /// <summary>
     /// Represents additional settings for the plugin updater, such as update enablement and notification preferences.
     /// </summary>
+    [System.Runtime.Serialization.DataContract]
     public class AdditionalSettings
     {
         /// <summary>
         /// Gets or sets a value indicating whether updates are enabled for the plugins.
         /// </summary>
+        [System.Runtime.Serialization.DataMember]
         public bool IsUpdateEnabled { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether to show notifications for available updates.
         /// </summary>
+        [System.Runtime.Serialization.DataMember]
         public bool ShowUpdateNotification { get; set; }
 
         /// <summary>

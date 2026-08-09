@@ -1,11 +1,12 @@
-﻿using Newtonsoft.Json;
 using System;
+using System.Runtime.Serialization;
 
 namespace PluginUpdater
 {
     /// <summary>
     /// Represents information about a plugin, including its name, file version, update URL, and download URL.
     /// </summary>
+    [DataContract]
     public class PluginInfo
     {
         private string _currentVersionStr;
@@ -16,13 +17,14 @@ namespace PluginUpdater
         /// <summary>
         /// Gets or sets the name of the plugin.
         /// </summary>
+        [DataMember]
         public string Name { get; set; }
 
 
         /// <summary>
         /// Gets the Current Version of the plugin.
         /// </summary>
-        [JsonIgnore]
+        [IgnoreDataMember]
         public Version CurrentVersion
         {
             get
@@ -34,6 +36,7 @@ namespace PluginUpdater
         /// <summary>
         /// Gets or sets the Current Version of the plugin as a string.
         /// </summary>
+        [DataMember]
         public string CurrentVersionStr
         {
             get
@@ -51,6 +54,7 @@ namespace PluginUpdater
         /// <summary>
         /// Gets or sets the URL for checking updates for the plugin.
         /// </summary>
+        [DataMember]
         public string UpdateUrl { get; set; }
 
 
@@ -72,7 +76,7 @@ namespace PluginUpdater
         /// <summary>
         /// Gets the Latest Version of the plugin.
         /// </summary>
-        [JsonIgnore]
+        [IgnoreDataMember]
         public Version LatestVersion
         {
             get
@@ -84,6 +88,7 @@ namespace PluginUpdater
         /// <summary>
         /// Gets or sets the Latest Version of the plugin as a string.
         /// </summary>
+        [DataMember]
         public string LatestVersionStr
         {
             get
@@ -101,6 +106,7 @@ namespace PluginUpdater
         /// <summary>
         /// Gets or sets the URL to download the plugin.
         /// </summary>
+        [DataMember]
         public string DownloadUrl { get; set; }
     }
 }

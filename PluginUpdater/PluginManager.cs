@@ -1,13 +1,14 @@
 ﻿using KeePass.App;
 using KeePass.Forms;
 using KeePass.Plugins;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Reflection;
+using System.Runtime.Serialization.Json;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -55,7 +56,7 @@ namespace PluginUpdater
         {
             this.updatedPlugins.Clear();
             StateStorage.Instance().RestartRequired = false;
-            StateStorage.Instance().Settings.PluginList = getPluginList();
+            StateStorage.Instance().Settings.PluginList = getPluginList().ToList();
             loadSettings();
             await checkForPluginUpdates();
             await updatePlugins(forceUpdate);
@@ -403,7 +404,7 @@ namespace PluginUpdater
 
             try
             {
-                SettingsItem settingsPlugin = JsonConvert.DeserializeObject<SettingsItem>(settings);
+                SettingsItem settingsPlugin = DeserializeSettings(settings);
 
                 // Update the download URLs for each plugin in the main plugin list
                 foreach (PluginInfo item in StateStorage.Instance().Settings.PluginList)
@@ -414,7 +415,7 @@ namespace PluginUpdater
 
                 StateStorage.Instance().Settings.AdditionalSettings = settingsPlugin.AdditionalSettings;
             }
-            catch (JsonException ex)
+            catch (Exception ex)
             {
                     Console.WriteLine("Error loading settings: {0}", ex.Message);
             }
@@ -428,10 +429,38 @@ namespace PluginUpdater
         /// </summary>
         public void SaveSettings()
         {
-            string pluginsSettings = JsonConvert.SerializeObject(StateStorage.Instance().Settings);
+            string pluginsSettings = SerializeSettings(StateStorage.Instance().Settings);
             StateStorage.Instance().Host.CustomConfig.SetString("PluginUpdater", pluginsSettings);
             StateStorage.Instance().SettingsForm.Close();
             StateStorage.Instance().Host.MainWindow.SaveConfig(); // Save the configuration after updating settings
+        }
+
+        /// <summary>
+        /// Serializes settings without requiring third-party assemblies in PLGX builds.
+        /// </summary>
+        private static string SerializeSettings(SettingsItem settings)
+        {
+            DataContractJsonSerializer serializer = new DataContractJsonSerializer(typeof(SettingsItem));
+
+            using (MemoryStream stream = new MemoryStream())
+            {
+                serializer.WriteObject(stream, settings);
+                return Encoding.UTF8.GetString(stream.ToArray());
+            }
+        }
+
+        /// <summary>
+        /// Deserializes settings without requiring third-party assemblies in PLGX builds.
+        /// </summary>
+        private static SettingsItem DeserializeSettings(string settings)
+        {
+            DataContractJsonSerializer serializer = new DataContractJsonSerializer(typeof(SettingsItem));
+
+            using (MemoryStream stream = new MemoryStream(Encoding.UTF8.GetBytes(settings)))
+            {
+                SettingsItem result = serializer.ReadObject(stream) as SettingsItem;
+                return result ?? new SettingsItem();
+            }
         }
 
         /// <summary>
