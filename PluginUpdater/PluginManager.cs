@@ -58,9 +58,7 @@ namespace PluginUpdater
             {
                 this.updatedPlugins.Clear();
                 StateStorage.Instance().RestartRequired = false;
-                StateStorage.Instance().Settings.PluginList = getPluginList().ToList();
-                loadSettings();
-                await checkForPluginUpdates();
+                await RefreshPluginList(true);
                 await updatePlugins(forceUpdate);
                 restartApplication();
             }
@@ -71,6 +69,20 @@ namespace PluginUpdater
                 {
                     throw;
                 }
+            }
+        }
+
+        /// <summary>
+        /// Refreshes the current KeePass plugin list and merges persisted updater settings.
+        /// </summary>
+        public async Task RefreshPluginList(bool checkForUpdates)
+        {
+            StateStorage.Instance().Settings.PluginList = getPluginList().ToList();
+            loadSettings();
+
+            if (checkForUpdates)
+            {
+                await checkForPluginUpdates();
             }
         }
 

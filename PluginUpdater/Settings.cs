@@ -46,8 +46,11 @@ namespace PluginUpdater
         /// <summary>
         /// Loads the current plugin and settings data into the dialog when it is shown.
         /// </summary>
-        private void Settings_Shown(object sender, EventArgs e)
+        private async void Settings_Shown(object sender, EventArgs e)
         {
+            await PluginManager.Instance().RefreshPluginList(true);
+
+            this.dataGridView1.DataSource = null;
             this.dataGridView1.DataSource = StateStorage.Instance().Settings.PluginList;
             this.cbEnableUpdate.Checked = StateStorage.Instance().Settings.AdditionalSettings.IsUpdateEnabled;
             this.cbEnableNotification.Checked = StateStorage.Instance().Settings.AdditionalSettings.ShowUpdateNotification;
