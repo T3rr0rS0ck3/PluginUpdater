@@ -33,15 +33,7 @@ namespace PluginUpdater
                 return false;
             }
 
-            StateStorage.Instance().SettingsForm = new Settings
-            {
-                StartPosition = System.Windows.Forms.FormStartPosition.CenterParent,
-                Text = StateStorage.Instance().Name + " Settings"
-            };
-
             StateStorage.Instance().Host = host;
-
-            StateStorage.Instance().Host.MainWindow.UIStateUpdated += MainWindow_UIStateUpdated;
 
             return true;
         }
@@ -54,23 +46,10 @@ namespace PluginUpdater
         /// </summary>
         public override void Terminate()
         {
-            if (StateStorage.Instance().Host != null && StateStorage.Instance().Host.MainWindow != null)
-            {
-                StateStorage.Instance().Host.MainWindow.UIStateUpdated -= MainWindow_UIStateUpdated;
-            }
-
             if (this._updateTask != null)
             {
                 this._updateTask.Dispose();
             }
-        }
-
-        /// <summary>
-        /// Starts an automatic update check when the KeePass UI state changes.
-        /// </summary>
-        private async void MainWindow_UIStateUpdated(object sender, EventArgs e)
-        {
-            await this.StartUpdate(false);
         }
 
         /// <summary>
@@ -104,6 +83,15 @@ namespace PluginUpdater
         /// </summary>
         private void OnOptionsClicked(object sender, EventArgs e)
         {
+            if (StateStorage.Instance().SettingsForm == null)
+            {
+                StateStorage.Instance().SettingsForm = new Settings
+                {
+                    StartPosition = System.Windows.Forms.FormStartPosition.CenterParent,
+                    Text = StateStorage.Instance().Name + " Settings"
+                };
+            }
+
             StateStorage.Instance().SettingsForm.ShowDialog(StateStorage.Instance().Host.MainWindow);
         }
 
