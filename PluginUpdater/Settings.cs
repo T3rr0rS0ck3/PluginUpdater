@@ -48,12 +48,43 @@ namespace PluginUpdater
         /// </summary>
         private async void Settings_Shown(object sender, EventArgs e)
         {
-            await PluginManager.Instance().RefreshPluginList(true);
+            await this.RefreshPluginGrid(true);
+            this.cbEnableUpdate.Checked = StateStorage.Instance().Settings.AdditionalSettings.IsUpdateEnabled;
+            this.cbEnableNotification.Checked = StateStorage.Instance().Settings.AdditionalSettings.ShowUpdateNotification;
+        }
+
+        /// <summary>
+        /// Refreshes the plugin grid and optionally checks update URLs.
+        /// </summary>
+        private async System.Threading.Tasks.Task RefreshPluginGrid(bool checkForUpdates)
+        {
+            await PluginManager.Instance().RefreshPluginList(checkForUpdates);
 
             this.dataGridView1.DataSource = null;
             this.dataGridView1.DataSource = StateStorage.Instance().Settings.PluginList;
-            this.cbEnableUpdate.Checked = StateStorage.Instance().Settings.AdditionalSettings.IsUpdateEnabled;
-            this.cbEnableNotification.Checked = StateStorage.Instance().Settings.AdditionalSettings.ShowUpdateNotification;
+        }
+
+        /// <summary>
+        /// Checks update URLs and refreshes the latest version data.
+        /// </summary>
+        private async void btnCheckUpdates_Click(object sender, EventArgs e)
+        {
+            this.btnCheckUpdates.Enabled = false;
+            this.btnCheckUpdates.Text = "Checking...";
+
+            try
+            {
+                await this.RefreshPluginGrid(true);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, "Update check failed: " + ex.Message, StateStorage.Instance().Name, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                this.btnCheckUpdates.Text = "Check for updates";
+                this.btnCheckUpdates.Enabled = true;
+            }
         }
 
         /// <summary>

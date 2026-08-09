@@ -35,10 +35,12 @@
             this.richTextBox1 = new System.Windows.Forms.RichTextBox();
             this.cbEnableUpdate = new System.Windows.Forms.CheckBox();
             this.cbEnableNotification = new System.Windows.Forms.CheckBox();
+            this.btnCheckUpdates = new System.Windows.Forms.Button();
             this.nameDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.colDownloadUrl = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.CurrentVersion = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.LatestVersion = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.HasUpdate = new System.Windows.Forms.DataGridViewCheckBoxColumn();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pluginInfoBindingSource)).BeginInit();
             this.SuspendLayout();
@@ -52,7 +54,8 @@
             this.nameDataGridViewTextBoxColumn,
             this.colDownloadUrl,
             this.CurrentVersion,
-            this.LatestVersion});
+            this.LatestVersion,
+            this.HasUpdate});
             this.dataGridView1.DataSource = this.pluginInfoBindingSource;
             this.dataGridView1.Location = new System.Drawing.Point(12, 197);
             this.dataGridView1.Name = "dataGridView1";
@@ -113,6 +116,16 @@
             this.cbEnableNotification.UseVisualStyleBackColor = true;
             this.cbEnableNotification.CheckedChanged += new System.EventHandler(this.cbEnableNotification_CheckedChanged);
             //
+            // btnCheckUpdates
+            //
+            this.btnCheckUpdates.Location = new System.Drawing.Point(12, 593);
+            this.btnCheckUpdates.Name = "btnCheckUpdates";
+            this.btnCheckUpdates.Size = new System.Drawing.Size(174, 30);
+            this.btnCheckUpdates.TabIndex = 5;
+            this.btnCheckUpdates.Text = "Check for updates";
+            this.btnCheckUpdates.UseVisualStyleBackColor = true;
+            this.btnCheckUpdates.Click += new System.EventHandler(this.btnCheckUpdates_Click);
+            //
             // nameDataGridViewTextBoxColumn
             //
             this.nameDataGridViewTextBoxColumn.DataPropertyName = "Name";
@@ -147,11 +160,22 @@
             this.LatestVersion.ReadOnly = true;
             this.LatestVersion.Width = 136;
             //
+            // HasUpdate
+            //
+            this.HasUpdate.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.DisplayedCells;
+            this.HasUpdate.DataPropertyName = "HasUpdate";
+            this.HasUpdate.HeaderText = "Update Available";
+            this.HasUpdate.MinimumWidth = 8;
+            this.HasUpdate.Name = "HasUpdate";
+            this.HasUpdate.ReadOnly = true;
+            this.HasUpdate.Width = 128;
+            //
             // Settings
             //
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 634);
+            this.Controls.Add(this.btnCheckUpdates);
             this.Controls.Add(this.cbEnableNotification);
             this.Controls.Add(this.cbEnableUpdate);
             this.Controls.Add(this.richTextBox1);
@@ -178,9 +202,11 @@
         private System.Windows.Forms.RichTextBox richTextBox1;
         private System.Windows.Forms.CheckBox cbEnableUpdate;
         private System.Windows.Forms.CheckBox cbEnableNotification;
+        private System.Windows.Forms.Button btnCheckUpdates;
         private System.Windows.Forms.DataGridViewTextBoxColumn nameDataGridViewTextBoxColumn;
         private System.Windows.Forms.DataGridViewTextBoxColumn colDownloadUrl;
         private System.Windows.Forms.DataGridViewTextBoxColumn CurrentVersion;
         private System.Windows.Forms.DataGridViewTextBoxColumn LatestVersion;
+        private System.Windows.Forms.DataGridViewCheckBoxColumn HasUpdate;
     }
 }
