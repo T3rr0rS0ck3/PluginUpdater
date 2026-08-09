@@ -120,6 +120,11 @@ namespace PluginUpdater
         /// </summary>
         private async Task StartUpdate(bool forceUpdate)
         {
+            if (!forceUpdate && (StateStorage.Instance().Host == null || StateStorage.Instance().Host.Database == null))
+            {
+                return;
+            }
+
             if (this._updateTask != null && !this._updateTask.IsCompleted)
             {
                 return;
