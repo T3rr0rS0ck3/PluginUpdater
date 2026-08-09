@@ -22,6 +22,7 @@ namespace PluginUpdater
     {
         private const string PluginUpdaterDownloadUrl = "https://github.com/T3rr0rS0ck3/PluginUpdater/releases/download/<version>/PluginUpdater.plgx";
         private const string SkipAutomaticUpdateOnceConfigKey = "PluginUpdater.SkipAutomaticUpdateOnce";
+        private const string LastLoadedVersionConfigKey = "PluginUpdater.LastLoadedVersion";
         private static PluginManager _instance;
         private static readonly object _lock = new object();
         private IList<string> updatedPlugins = new List<string>();
@@ -285,10 +286,7 @@ namespace PluginUpdater
             }
 
             StateStorage.Instance().Host.CustomConfig.SetBool(SkipAutomaticUpdateOnceConfigKey, true);
-            if (StateStorage.Instance().Host.MainWindow != null)
-            {
-                StateStorage.Instance().Host.MainWindow.SaveConfig();
-            }
+            SaveKeePassConfig();
         }
 
         /// <summary>
@@ -308,11 +306,57 @@ namespace PluginUpdater
             }
 
             StateStorage.Instance().Host.CustomConfig.SetBool(SkipAutomaticUpdateOnceConfigKey, false);
-            if (StateStorage.Instance().Host.MainWindow != null)
+            SaveKeePassConfig();
+            return true;
+        }
+
+        /// <summary>
+        /// Returns true when automatic update should be skipped during startup.
+        /// </summary>
+        public bool ConsumeStartupAutomaticUpdateSkip()
+        {
+            bool skipAfterPluginUpdate = ConsumeSkipAutomaticUpdateOnce();
+            bool skipAfterVersionChange = ConsumeFirstRunAfterVersionChange();
+            return skipAfterPluginUpdate || skipAfterVersionChange;
+        }
+
+        /// <summary>
+        /// Skips the automatic update once when KeePass loads a different PluginUpdater assembly version.
+        /// </summary>
+        private static bool ConsumeFirstRunAfterVersionChange()
+        {
+            if (StateStorage.Instance().Host == null)
+            {
+                return false;
+            }
+
+            Version currentVersion = Assembly.GetExecutingAssembly().GetName().Version;
+            string currentVersionString = currentVersion != null ? currentVersion.ToString() : string.Empty;
+            if (string.IsNullOrEmpty(currentVersionString))
+            {
+                return false;
+            }
+
+            string lastLoadedVersionString = StateStorage.Instance().Host.CustomConfig.GetString(LastLoadedVersionConfigKey, string.Empty);
+            if (string.Equals(lastLoadedVersionString, currentVersionString, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            StateStorage.Instance().Host.CustomConfig.SetString(LastLoadedVersionConfigKey, currentVersionString);
+            SaveKeePassConfig();
+            return true;
+        }
+
+        /// <summary>
+        /// Saves KeePass configuration when a custom PluginUpdater flag changes.
+        /// </summary>
+        private static void SaveKeePassConfig()
+        {
+            if (StateStorage.Instance().Host != null && StateStorage.Instance().Host.MainWindow != null)
             {
                 StateStorage.Instance().Host.MainWindow.SaveConfig();
             }
-            return true;
         }
 
         /// <summary>

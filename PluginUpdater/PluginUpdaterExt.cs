@@ -87,7 +87,7 @@ namespace PluginUpdater
 
             try
             {
-                if (PluginManager.Instance().ConsumeSkipAutomaticUpdateOnce())
+                if (PluginManager.Instance().ConsumeStartupAutomaticUpdateSkip())
                 {
                     return;
                 }
