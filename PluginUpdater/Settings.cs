@@ -29,8 +29,8 @@ namespace PluginUpdater
         {
             DataGridViewCell cellUrl = this.dataGridView1.Rows[e.RowIndex].Cells[e.ColumnIndex];
             DataGridViewCell cellName = this.dataGridView1.Rows[e.RowIndex].Cells[0];
-            string downloadUrl = cellUrl.Value?.ToString();
-            string pluginName = cellName.Value?.ToString();
+            string downloadUrl = cellUrl.Value != null ? cellUrl.Value.ToString() : null;
+            string pluginName = cellName.Value != null ? cellName.Value.ToString() : null;
 
             PluginManager.Instance().SetDownloadUrl(pluginName, downloadUrl);
         }

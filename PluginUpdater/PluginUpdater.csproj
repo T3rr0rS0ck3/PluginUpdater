@@ -13,6 +13,7 @@
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
+    <LangVersion>5</LangVersion>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
   </PropertyGroup>
@@ -102,5 +103,7 @@ xcopy /Y /R /D "$(TargetDir)*.dll" "$(SolutionDir)release\"
 </PostBuildEvent>
   </PropertyGroup>
 </Project>
+
+
 
 

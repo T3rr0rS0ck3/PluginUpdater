@@ -108,9 +108,9 @@ namespace PluginUpdater
 
                     plugins.Add(new PluginInfo
                     {
-                        Name = nameProperty?.GetValue(plugin)?.ToString() ?? "Unknown",
-                        CurrentVersionStr = fileVersionProperty?.GetValue(plugin)?.ToString() ?? "",
-                        UpdateUrl = (interfaceProperty?.GetValue(plugin) as Plugin)?.UpdateUrl ?? string.Empty
+                        Name = nameProperty != null && nameProperty.GetValue(plugin) != null ? nameProperty.GetValue(plugin).ToString() : "Unknown",
+                        CurrentVersionStr = fileVersionProperty != null && fileVersionProperty.GetValue(plugin) != null ? fileVersionProperty.GetValue(plugin).ToString() : string.Empty,
+                        UpdateUrl = GetPluginUpdateUrl(interfaceProperty, plugin)
                     });
 
                 }
@@ -171,14 +171,14 @@ namespace PluginUpdater
                         pluginInfo.CurrentVersionStr = pluginInfo.LatestVersionStr;
                         this.updatedPlugins.Add(pluginInfo.Name); // Add to the list of updated plugins
 
-                        Console.WriteLine($"Updated {pluginInfo.Name} to version {pluginInfo.CurrentVersionStr}");
+                        Console.WriteLine("Updated {0} to version {1}", pluginInfo.Name, pluginInfo.CurrentVersionStr);
 
                         StateStorage.Instance().RestartRequired = true; // Indicate that a restart is required to apply the update
                     }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error updating {pluginInfo.Name}: {ex.Message}");
+                    Console.WriteLine("Error updating {0}: {1}", pluginInfo.Name, ex.Message);
                 }
             }
         }
@@ -246,6 +246,26 @@ namespace PluginUpdater
             }
 
             return Regex.Replace(nameWithoutExtension, @"([\s\-_]?v?\d+(?:\.\d+){1,4})$", string.Empty, RegexOptions.IgnoreCase).TrimEnd(' ', '-', '_');
+        }
+
+        /// <summary>
+        /// Reads the update URL from the loaded plugin interface in a C# 5 compatible way.
+        /// </summary>
+        private static string GetPluginUpdateUrl(PropertyInfo interfaceProperty, object plugin)
+        {
+            if (interfaceProperty == null)
+            {
+                return string.Empty;
+            }
+
+            object pluginInterface = interfaceProperty.GetValue(plugin);
+            Plugin keePassPlugin = pluginInterface as Plugin;
+            if (keePassPlugin == null)
+            {
+                return string.Empty;
+            }
+
+            return keePassPlugin.UpdateUrl ?? string.Empty;
         }
 
         /// <summary>
@@ -320,7 +340,7 @@ namespace PluginUpdater
         {
             if (StateStorage.Instance().RestartRequired && StateStorage.Instance().Settings.AdditionalSettings.ShowUpdateNotification)
             {
-                DialogResult dialogResult = MessageBox.Show($"The following plugins have been updated: {string.Join(", ", this.updatedPlugins)}. The application must be restarted for the updates to take effect", "Restart Required", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                DialogResult dialogResult = MessageBox.Show("The following plugins have been updated: " + string.Join(", ", this.updatedPlugins) + ". The application must be restarted for the updates to take effect", "Restart Required", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 if (dialogResult != DialogResult.OK)
                 {
                     return; // User chose not to restart
@@ -364,7 +384,7 @@ namespace PluginUpdater
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"Error checking updates for {pluginInfo.Name}: {ex.Message}");
+                    Console.WriteLine("Error checking updates for {0}: {1}", pluginInfo.Name, ex.Message);
                     }
                 }
             }
@@ -388,14 +408,15 @@ namespace PluginUpdater
                 // Update the download URLs for each plugin in the main plugin list
                 foreach (PluginInfo item in StateStorage.Instance().Settings.PluginList)
                 {
-                    item.DownloadUrl = settingsPlugin.PluginList.FirstOrDefault(p => p.Name == item.Name)?.DownloadUrl;
+                            PluginInfo matchingPlugin = settingsPlugin.PluginList.FirstOrDefault(p => p.Name == item.Name);
+                            item.DownloadUrl = matchingPlugin != null ? matchingPlugin.DownloadUrl : null;
                 }
 
                 StateStorage.Instance().Settings.AdditionalSettings = settingsPlugin.AdditionalSettings;
             }
             catch (JsonException ex)
             {
-                Console.WriteLine($"Error loading settings: {ex.Message}");
+                    Console.WriteLine("Error loading settings: {0}", ex.Message);
             }
         }
 

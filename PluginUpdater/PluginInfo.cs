@@ -42,7 +42,8 @@ namespace PluginUpdater
             }
             set
             {
-                this._currentVersion = Version.TryParse(value, out Version version) ? version : new Version(0, 0, 0, 0);
+                Version version;
+                this._currentVersion = Version.TryParse(value, out version) ? version : new Version(0, 0, 0, 0);
                 _currentVersionStr = value;
             }
         }
@@ -91,7 +92,8 @@ namespace PluginUpdater
             }
             set
             {
-                this._latestVersion = Version.TryParse(value, out Version version) ? version : new Version(0, 0, 0, 0);
+                Version version;
+                this._latestVersion = Version.TryParse(value, out version) ? version : new Version(0, 0, 0, 0);
                 _latestVersionStr = value;
             }
         }

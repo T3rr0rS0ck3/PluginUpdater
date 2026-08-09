@@ -16,7 +16,10 @@ namespace PluginUpdater
         /// <summary>
         /// Gets the update URL used by KeePass to check for new PluginUpdater releases.
         /// </summary>
-        public override string UpdateUrl => "https://raw.githubusercontent.com/T3rr0rS0ck3/PluginUpdater/refs/heads/main/version.info";
+        public override string UpdateUrl
+        {
+            get { return "https://raw.githubusercontent.com/T3rr0rS0ck3/PluginUpdater/refs/heads/main/version.info"; }
+        }
 
         /// <summary>
         /// Initializes the plugin with the provided host.
@@ -32,7 +35,7 @@ namespace PluginUpdater
             StateStorage.Instance().SettingsForm = new Settings
             {
                 StartPosition = System.Windows.Forms.FormStartPosition.CenterParent,
-                Text = $"{StateStorage.Instance().Name} Settings"
+                Text = StateStorage.Instance().Name + " Settings"
             };
 
             StateStorage.Instance().Host = host;
