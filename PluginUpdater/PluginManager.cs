@@ -47,13 +47,14 @@ namespace PluginUpdater
         /// Executes the plugin update process, which includes retrieving the plugin list, checking for updates, downloading updates, and restarting the application if necessary.
         /// </summary>
         /// <returns></returns>
-        public async Task Execute()
+        public async Task Execute(bool forceUpdate = false)
         {
-
+            this.updatedPlugins.Clear();
+            StateStorage.Instance().RestartRequired = false;
             StateStorage.Instance().Settings.PluginList = getPluginList();
             loadSettings();
             await checkForPluginUpdates();
-            await updatePlugins();
+            await updatePlugins(forceUpdate);
             restartApplication();
         }
 
@@ -114,37 +115,45 @@ namespace PluginUpdater
             return Enumerable.Empty<PluginInfo>().ToList();
         }
 
-        private async Task updatePlugins()
+        private async Task updatePlugins(bool forceUpdate)
         {
-            if (!StateStorage.Instance().Settings.AdditionalSettings.IsUpdateEnabled)
+            if (!forceUpdate && !StateStorage.Instance().Settings.AdditionalSettings.IsUpdateEnabled)
             {
                 return; // Skip updates if the setting is disabled
             }
 
             string pluginDir = Path.Combine(KeePassLib.Utility.UrlUtil.GetFileDirectory(KeePass.Util.WinUtil.GetExecutable(), bAppendTerminatingChar: false, bEnsureValidDirSpec: true), AppDefs.PluginsDir);
+            Directory.CreateDirectory(pluginDir);
 
             foreach (PluginInfo pluginInfo in StateStorage.Instance().Settings.PluginList)
             {
                 if (!pluginInfo.HasUpdate || string.IsNullOrEmpty(pluginInfo.DownloadUrl) || !pluginInfo.DownloadUrl.Contains("<version>"))
                 {
-                    continue; // Skip plugins without a download URL
+                    continue; // Skip plugins without a versioned download URL
                 }
 
                 string downloadUrl = pluginInfo.DownloadUrl.Replace("<version>", pluginInfo.LatestVersionStr);
                 Uri downloadUri = new Uri(downloadUrl);
-                string filename = downloadUri.Segments.LastOrDefault();
-                string filePath = Path.Combine(pluginDir, $"{filename}");
-
-                if (!File.Exists(filePath))
-                {
-                    continue; // Plugin already exists, skip update
-                }
+                string filename = Path.GetFileName(downloadUri.LocalPath);
+                bool isZip = downloadUri.AbsolutePath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase);
                 try
                 {
                     using (HttpClient httpClient = new HttpClient())
                     {
                         byte[] pluginData = await httpClient.GetByteArrayAsync(downloadUrl);
-                        File.WriteAllBytes(filePath, pluginData);
+
+                        if (isZip)
+                        {
+                            string zipFilePath = Path.Combine(pluginDir, filename);
+                            File.WriteAllBytes(zipFilePath, pluginData);
+                            ExtractZipFile(zipFilePath, pluginDir);
+                            File.Delete(zipFilePath);
+                        }
+                        else
+                        {
+                            string filePath = Path.Combine(pluginDir, filename);
+                            File.WriteAllBytes(filePath, pluginData);
+                        }
 
                         // Update the plugin info with the new version
                         pluginInfo.CurrentVersionStr = pluginInfo.LatestVersionStr;
@@ -158,6 +167,68 @@ namespace PluginUpdater
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Error updating {pluginInfo.Name}: {ex.Message}");
+                }
+            }
+        }
+
+        private static void ExtractZipFile(string zipFilePath, string destinationDirectory)
+        {
+            Assembly compressionAssembly = Assembly.Load("System.IO.Compression");
+            Type zipArchiveType = compressionAssembly.GetType("System.IO.Compression.ZipArchive");
+            Type zipArchiveModeType = compressionAssembly.GetType("System.IO.Compression.ZipArchiveMode");
+
+            if (zipArchiveType == null || zipArchiveModeType == null)
+            {
+                throw new InvalidOperationException("ZIP support is not available.");
+            }
+
+            string destinationRoot = Path.GetFullPath(destinationDirectory.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar);
+
+            using (FileStream zipFileStream = new FileStream(zipFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                object zipArchiveMode = Enum.ToObject(zipArchiveModeType, 0);
+                object archive = Activator.CreateInstance(zipArchiveType, zipFileStream, zipArchiveMode);
+
+                try
+                {
+                    dynamic archiveDynamic = archive;
+                    foreach (object entry in archiveDynamic.Entries)
+                    {
+                        dynamic entryDynamic = entry;
+                        string entryPath = ((string)entryDynamic.FullName).Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar);
+                        string destinationPath = Path.GetFullPath(Path.Combine(destinationDirectory, entryPath));
+
+                        if (!destinationPath.StartsWith(destinationRoot, StringComparison.OrdinalIgnoreCase))
+                        {
+                            continue;
+                        }
+
+                        if (string.IsNullOrEmpty((string)entryDynamic.Name))
+                        {
+                            Directory.CreateDirectory(destinationPath);
+                            continue;
+                        }
+
+                        string directoryName = Path.GetDirectoryName(destinationPath);
+                        if (!string.IsNullOrEmpty(directoryName))
+                        {
+                            Directory.CreateDirectory(directoryName);
+                        }
+
+                        using (Stream entryStream = (Stream)entryDynamic.Open())
+                        using (FileStream destinationStream = new FileStream(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None))
+                        {
+                            entryStream.CopyTo(destinationStream);
+                        }
+                    }
+                }
+                finally
+                {
+                    IDisposable disposableArchive = archive as IDisposable;
+                    if (disposableArchive != null)
+                    {
+                        disposableArchive.Dispose();
+                    }
                 }
             }
         }

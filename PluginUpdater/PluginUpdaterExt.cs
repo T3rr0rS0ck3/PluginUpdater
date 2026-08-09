@@ -1,6 +1,5 @@
 ﻿using KeePass.Plugins;
 using System;
-using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -12,6 +11,7 @@ namespace PluginUpdater
     public sealed class PluginUpdaterExt : Plugin
     {
         private Task _updateTask;
+        private ToolStripMenuItem _updateNowMenuItem;
 
         public override string UpdateUrl => "https://raw.githubusercontent.com/T3rr0rS0ck3/PluginUpdater/refs/heads/main/version.info";
 
@@ -44,12 +44,15 @@ namespace PluginUpdater
         /// </summary>
         public override void Terminate()
         {
-            this._updateTask.Dispose();
+            if (this._updateTask != null)
+            {
+                this._updateTask.Dispose();
+            }
         }
 
-        private void MainWindow_UIStateUpdated(object sender, EventArgs e)
+        private async void MainWindow_UIStateUpdated(object sender, EventArgs e)
         {
-            this._updateTask = PluginManager.Instance().Execute();
+            await this.StartUpdate(false);
         }
 
         /// <summary>
@@ -63,7 +66,12 @@ namespace PluginUpdater
             {
                 ToolStripMenuItem tsmi = new ToolStripMenuItem();
                 tsmi.Text = StateStorage.Instance().Name;
-                tsmi.Click += this.OnOptionsClicked;
+                tsmi.DropDownItems.Add("Settings", null, this.OnOptionsClicked);
+
+                this._updateNowMenuItem = new ToolStripMenuItem("Update now");
+                this._updateNowMenuItem.Click += this.OnUpdateNowClicked;
+                tsmi.DropDownItems.Add(this._updateNowMenuItem);
+
                 return tsmi;
             }
 
@@ -73,6 +81,38 @@ namespace PluginUpdater
         private void OnOptionsClicked(object sender, EventArgs e)
         {
             StateStorage.Instance().SettingsForm.ShowDialog(StateStorage.Instance().Host.MainWindow);
+        }
+
+        private async void OnUpdateNowClicked(object sender, EventArgs e)
+        {
+            await this.StartUpdate(true);
+        }
+
+        private async Task StartUpdate(bool forceUpdate)
+        {
+            if (this._updateTask != null && !this._updateTask.IsCompleted)
+            {
+                return;
+            }
+
+            if (this._updateNowMenuItem != null)
+            {
+                this._updateNowMenuItem.Enabled = false;
+            }
+
+            this._updateTask = PluginManager.Instance().Execute(forceUpdate);
+
+            try
+            {
+                await this._updateTask;
+            }
+            finally
+            {
+                if (this._updateNowMenuItem != null)
+                {
+                    this._updateNowMenuItem.Enabled = true;
+                }
+            }
         }
     }
 }
