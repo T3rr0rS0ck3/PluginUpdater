@@ -30,17 +30,17 @@
         {
             this.components = new System.ComponentModel.Container();
             this.dataGridView1 = new System.Windows.Forms.DataGridView();
+            this.nameDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.colDownloadUrl = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.CurrentVersion = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.LatestVersion = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.HasUpdate = new System.Windows.Forms.DataGridViewCheckBoxColumn();
             this.pluginInfoBindingSource = new System.Windows.Forms.BindingSource(this.components);
             this.btnOk = new System.Windows.Forms.Button();
             this.richTextBox1 = new System.Windows.Forms.RichTextBox();
             this.cbEnableUpdate = new System.Windows.Forms.CheckBox();
             this.cbEnableNotification = new System.Windows.Forms.CheckBox();
             this.btnCheckUpdates = new System.Windows.Forms.Button();
-            this.nameDataGridViewTextBoxColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.colDownloadUrl = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.CurrentVersion = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.LatestVersion = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.HasUpdate = new System.Windows.Forms.DataGridViewCheckBoxColumn();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pluginInfoBindingSource)).BeginInit();
             this.SuspendLayout();
@@ -57,74 +57,13 @@
             this.LatestVersion,
             this.HasUpdate});
             this.dataGridView1.DataSource = this.pluginInfoBindingSource;
-            this.dataGridView1.Location = new System.Drawing.Point(12, 197);
+            this.dataGridView1.Location = new System.Drawing.Point(8, 128);
+            this.dataGridView1.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.dataGridView1.Name = "dataGridView1";
             this.dataGridView1.RowHeadersWidth = 62;
             this.dataGridView1.RowTemplate.Height = 28;
-            this.dataGridView1.Size = new System.Drawing.Size(776, 390);
+            this.dataGridView1.Size = new System.Drawing.Size(517, 253);
             this.dataGridView1.TabIndex = 0;
-            //
-            // pluginInfoBindingSource
-            //
-            this.pluginInfoBindingSource.DataSource = typeof(PluginUpdater.PluginInfo);
-            //
-            // btnOk
-            //
-            this.btnOk.Location = new System.Drawing.Point(688, 593);
-            this.btnOk.Name = "btnOk";
-            this.btnOk.Size = new System.Drawing.Size(100, 30);
-            this.btnOk.TabIndex = 1;
-            this.btnOk.Text = "Ok";
-            this.btnOk.UseVisualStyleBackColor = true;
-            this.btnOk.Click += new System.EventHandler(this.btnOk_Click);
-            //
-            // richTextBox1
-            //
-            this.richTextBox1.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.richTextBox1.Location = new System.Drawing.Point(12, 12);
-            this.richTextBox1.Name = "richTextBox1";
-            this.richTextBox1.ReadOnly = true;
-            this.richTextBox1.Size = new System.Drawing.Size(776, 109);
-            this.richTextBox1.TabIndex = 2;
-            this.richTextBox1.Text = "The download URLs must be configured so that the automatic update of the plugins " +
-    "works.  \n\n!!! IMPORTANT !!! \nThe URL must contain the placeholder “<version>” (w" +
-    "ithout quotation marks)";
-            //
-            // cbEnableUpdate
-            //
-            this.cbEnableUpdate.AutoSize = true;
-            this.cbEnableUpdate.Checked = true;
-            this.cbEnableUpdate.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cbEnableUpdate.Location = new System.Drawing.Point(12, 137);
-            this.cbEnableUpdate.Name = "cbEnableUpdate";
-            this.cbEnableUpdate.Size = new System.Drawing.Size(222, 24);
-            this.cbEnableUpdate.TabIndex = 3;
-            this.cbEnableUpdate.Text = "Automatic update enabled";
-            this.cbEnableUpdate.UseVisualStyleBackColor = true;
-            this.cbEnableUpdate.CheckedChanged += new System.EventHandler(this.cbEnableUpdate_CheckedChanged);
-            //
-            // cbEnableNotification
-            //
-            this.cbEnableNotification.AutoSize = true;
-            this.cbEnableNotification.Checked = true;
-            this.cbEnableNotification.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cbEnableNotification.Location = new System.Drawing.Point(12, 167);
-            this.cbEnableNotification.Name = "cbEnableNotification";
-            this.cbEnableNotification.Size = new System.Drawing.Size(158, 24);
-            this.cbEnableNotification.TabIndex = 4;
-            this.cbEnableNotification.Text = "Show Notification";
-            this.cbEnableNotification.UseVisualStyleBackColor = true;
-            this.cbEnableNotification.CheckedChanged += new System.EventHandler(this.cbEnableNotification_CheckedChanged);
-            //
-            // btnCheckUpdates
-            //
-            this.btnCheckUpdates.Location = new System.Drawing.Point(12, 593);
-            this.btnCheckUpdates.Name = "btnCheckUpdates";
-            this.btnCheckUpdates.Size = new System.Drawing.Size(174, 30);
-            this.btnCheckUpdates.TabIndex = 5;
-            this.btnCheckUpdates.Text = "Check for updates";
-            this.btnCheckUpdates.UseVisualStyleBackColor = true;
-            this.btnCheckUpdates.Click += new System.EventHandler(this.btnCheckUpdates_Click);
             //
             // nameDataGridViewTextBoxColumn
             //
@@ -148,7 +87,7 @@
             this.CurrentVersion.MinimumWidth = 8;
             this.CurrentVersion.Name = "CurrentVersion";
             this.CurrentVersion.ReadOnly = true;
-            this.CurrentVersion.Width = 144;
+            this.CurrentVersion.Width = 96;
             //
             // LatestVersion
             //
@@ -158,7 +97,7 @@
             this.LatestVersion.MinimumWidth = 8;
             this.LatestVersion.Name = "LatestVersion";
             this.LatestVersion.ReadOnly = true;
-            this.LatestVersion.Width = 136;
+            this.LatestVersion.Width = 91;
             //
             // HasUpdate
             //
@@ -168,13 +107,80 @@
             this.HasUpdate.MinimumWidth = 8;
             this.HasUpdate.Name = "HasUpdate";
             this.HasUpdate.ReadOnly = true;
-            this.HasUpdate.Width = 128;
+            this.HasUpdate.Width = 85;
+            //
+            // pluginInfoBindingSource
+            //
+            this.pluginInfoBindingSource.DataSource = typeof(PluginUpdater.PluginInfo);
+            //
+            // btnOk
+            //
+            this.btnOk.Location = new System.Drawing.Point(459, 385);
+            this.btnOk.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.btnOk.Name = "btnOk";
+            this.btnOk.Size = new System.Drawing.Size(67, 30);
+            this.btnOk.TabIndex = 1;
+            this.btnOk.Text = "Ok";
+            this.btnOk.UseVisualStyleBackColor = true;
+            this.btnOk.Click += new System.EventHandler(this.btnOk_Click);
+            //
+            // richTextBox1
+            //
+            this.richTextBox1.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.richTextBox1.Location = new System.Drawing.Point(8, 8);
+            this.richTextBox1.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.richTextBox1.Name = "richTextBox1";
+            this.richTextBox1.ReadOnly = true;
+            this.richTextBox1.Size = new System.Drawing.Size(517, 71);
+            this.richTextBox1.TabIndex = 2;
+            this.richTextBox1.Text = "The download URLs must be configured so that the automatic update of the plugins " +
+    "works.  \n\n!!! IMPORTANT !!! \nThe URL must contain the placeholder “<version>” (w" +
+    "ithout quotation marks)";
+            //
+            // cbEnableUpdate
+            //
+            this.cbEnableUpdate.AutoSize = true;
+            this.cbEnableUpdate.Checked = true;
+            this.cbEnableUpdate.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.cbEnableUpdate.Location = new System.Drawing.Point(8, 89);
+            this.cbEnableUpdate.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.cbEnableUpdate.Name = "cbEnableUpdate";
+            this.cbEnableUpdate.Size = new System.Drawing.Size(150, 17);
+            this.cbEnableUpdate.TabIndex = 3;
+            this.cbEnableUpdate.Text = "Automatic update enabled";
+            this.cbEnableUpdate.UseVisualStyleBackColor = true;
+            this.cbEnableUpdate.CheckedChanged += new System.EventHandler(this.cbEnableUpdate_CheckedChanged);
+            //
+            // cbEnableNotification
+            //
+            this.cbEnableNotification.AutoSize = true;
+            this.cbEnableNotification.Checked = true;
+            this.cbEnableNotification.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.cbEnableNotification.Location = new System.Drawing.Point(8, 109);
+            this.cbEnableNotification.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.cbEnableNotification.Name = "cbEnableNotification";
+            this.cbEnableNotification.Size = new System.Drawing.Size(109, 17);
+            this.cbEnableNotification.TabIndex = 4;
+            this.cbEnableNotification.Text = "Show Notification";
+            this.cbEnableNotification.UseVisualStyleBackColor = true;
+            this.cbEnableNotification.CheckedChanged += new System.EventHandler(this.cbEnableNotification_CheckedChanged);
+            //
+            // btnCheckUpdates
+            //
+            this.btnCheckUpdates.Location = new System.Drawing.Point(8, 385);
+            this.btnCheckUpdates.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.btnCheckUpdates.Name = "btnCheckUpdates";
+            this.btnCheckUpdates.Size = new System.Drawing.Size(116, 30);
+            this.btnCheckUpdates.TabIndex = 5;
+            this.btnCheckUpdates.Text = "Check for updates";
+            this.btnCheckUpdates.UseVisualStyleBackColor = true;
+            this.btnCheckUpdates.Click += new System.EventHandler(this.btnCheckUpdates_Click);
             //
             // Settings
             //
-            this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 634);
+            this.ClientSize = new System.Drawing.Size(533, 420);
             this.Controls.Add(this.btnCheckUpdates);
             this.Controls.Add(this.cbEnableNotification);
             this.Controls.Add(this.cbEnableUpdate);
@@ -182,6 +188,7 @@
             this.Controls.Add(this.btnOk);
             this.Controls.Add(this.dataGridView1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+            this.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.MaximizeBox = false;
             this.Name = "Settings";
             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
