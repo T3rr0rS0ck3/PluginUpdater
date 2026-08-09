@@ -230,6 +230,7 @@ namespace PluginUpdater
                 Uri downloadUri = new Uri(downloadUrl);
                 string filename = GetNormalizedArtifactFileName(downloadUri, pluginInfo.LatestVersionStr);
                 bool isZip = downloadUri.AbsolutePath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase);
+                bool isPlgx = downloadUri.AbsolutePath.EndsWith(".plgx", StringComparison.OrdinalIgnoreCase);
                 try
                 {
                     using (HttpClient httpClient = new HttpClient())
@@ -256,6 +257,10 @@ namespace PluginUpdater
                         this.updatedPlugins.Add(pluginInfo.Name); // Add to the list of updated plugins
 
                         Console.WriteLine("Updated {0} to version {1}", pluginInfo.Name, pluginInfo.CurrentVersionStr);
+                        if (isPlgx)
+                        {
+                            ClearPluginCache(pluginInfo.Name, filename);
+                        }
 
                         StateStorage.Instance().RestartRequired = true; // Indicate that a restart is required to apply the update
                     }
@@ -264,6 +269,84 @@ namespace PluginUpdater
                 {
                     Console.WriteLine("Error updating {0}: {1}", pluginInfo.Name, ex.Message);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Removes the KeePass PLGX cache folder for the specified plugin so the updated package is compiled on next start.
+        /// </summary>
+        private static void ClearPluginCache(string pluginName, string artifactFileName)
+        {
+            if (string.IsNullOrEmpty(pluginName) && string.IsNullOrEmpty(artifactFileName))
+            {
+                return;
+            }
+
+            string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            if (string.IsNullOrEmpty(localAppData))
+            {
+                return;
+            }
+
+            string pluginCacheDir = Path.Combine(localAppData, "KeePass", "PluginCache");
+            if (!Directory.Exists(pluginCacheDir))
+            {
+                return;
+            }
+
+            foreach (string cacheDirectory in Directory.GetDirectories(pluginCacheDir))
+            {
+                if (!CacheDirectoryBelongsToPlugin(cacheDirectory, pluginName, artifactFileName))
+                {
+                    continue;
+                }
+
+                TryDeleteDirectory(cacheDirectory);
+            }
+        }
+
+        /// <summary>
+        /// Returns whether a top-level KeePass cache directory contains the compiled plugin DLL.
+        /// </summary>
+        private static bool CacheDirectoryBelongsToPlugin(string cacheDirectory, string pluginName, string artifactFileName)
+        {
+            string artifactBaseName = Path.GetFileNameWithoutExtension(artifactFileName ?? string.Empty);
+            List<string> expectedDllNames = new List<string>();
+
+            if (!string.IsNullOrEmpty(artifactBaseName))
+            {
+                expectedDllNames.Add(artifactBaseName + ".dll");
+            }
+
+            if (!string.IsNullOrEmpty(pluginName))
+            {
+                expectedDllNames.Add(pluginName + ".dll");
+            }
+
+            foreach (string filePath in Directory.GetFiles(cacheDirectory, "*.dll", SearchOption.AllDirectories))
+            {
+                string fileName = Path.GetFileName(filePath);
+                foreach (string expectedDllName in expectedDllNames)
+                {
+                    if (string.Equals(fileName, expectedDllName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private static void TryDeleteDirectory(string directoryPath)
+        {
+            try
+            {
+                Directory.Delete(directoryPath, true);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Could not delete plugin cache directory {0}: {1}", directoryPath, ex.Message);
             }
         }
 
