@@ -20,6 +20,7 @@ namespace PluginUpdater
     /// </summary>
     public class PluginManager
     {
+        private const string PluginUpdaterDownloadUrl = "https://github.com/T3rr0rS0ck3/PluginUpdater/releases/download/%3Cversion%3E/PluginUpdater.plgx";
         private static PluginManager _instance;
         private static readonly object _lock = new object();
         private IList<string> updatedPlugins = new List<string>();
@@ -79,10 +80,25 @@ namespace PluginUpdater
         {
             StateStorage.Instance().Settings.PluginList = getPluginList().ToList();
             loadSettings();
+            ApplyDefaultDownloadUrls();
 
             if (checkForUpdates)
             {
                 await checkForPluginUpdates();
+            }
+        }
+
+        /// <summary>
+        /// Applies built-in download URLs that should not depend on user configuration.
+        /// </summary>
+        private static void ApplyDefaultDownloadUrls()
+        {
+            foreach (PluginInfo pluginInfo in StateStorage.Instance().Settings.PluginList)
+            {
+                if (string.Equals(pluginInfo.Name, StateStorage.Instance().Name, StringComparison.OrdinalIgnoreCase))
+                {
+                    pluginInfo.DownloadUrl = PluginUpdaterDownloadUrl;
+                }
             }
         }
 
@@ -205,12 +221,12 @@ namespace PluginUpdater
 
             foreach (PluginInfo pluginInfo in StateStorage.Instance().Settings.PluginList)
             {
-                if (!pluginInfo.HasUpdate || string.IsNullOrEmpty(pluginInfo.DownloadUrl) || !pluginInfo.DownloadUrl.Contains("<version>"))
+                if (!pluginInfo.HasUpdate || string.IsNullOrEmpty(pluginInfo.DownloadUrl) || !HasVersionPlaceholder(pluginInfo.DownloadUrl))
                 {
                     continue; // Skip plugins without a versioned download URL
                 }
 
-                string downloadUrl = pluginInfo.DownloadUrl.Replace("<version>", pluginInfo.LatestVersionStr);
+                string downloadUrl = ReplaceVersionPlaceholder(pluginInfo.DownloadUrl, pluginInfo.LatestVersionStr);
                 Uri downloadUri = new Uri(downloadUrl);
                 string filename = GetNormalizedArtifactFileName(downloadUri, pluginInfo.LatestVersionStr);
                 bool isZip = downloadUri.AbsolutePath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase);
@@ -249,6 +265,25 @@ namespace PluginUpdater
                     Console.WriteLine("Error updating {0}: {1}", pluginInfo.Name, ex.Message);
                 }
             }
+        }
+
+        /// <summary>
+        /// Returns whether a download URL contains a supported version placeholder.
+        /// </summary>
+        private static bool HasVersionPlaceholder(string downloadUrl)
+        {
+            return downloadUrl.Contains("<version>") || downloadUrl.IndexOf("%3Cversion%3E", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        /// <summary>
+        /// Replaces supported version placeholders in a download URL.
+        /// </summary>
+        private static string ReplaceVersionPlaceholder(string downloadUrl, string version)
+        {
+            return downloadUrl
+                .Replace("<version>", version)
+                .Replace("%3Cversion%3E", version)
+                .Replace("%3cversion%3e", version);
         }
 
         /// <summary>
