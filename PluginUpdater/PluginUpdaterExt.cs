@@ -1,5 +1,4 @@
 ﻿using KeePass.Plugins;
-using KeePass.Plugins;
 using System;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -46,10 +45,8 @@ namespace PluginUpdater
         /// </summary>
         public override void Terminate()
         {
-            if (this._updateTask != null)
-            {
-                this._updateTask.Dispose();
-            }
+            this._updateTask = null;
+            this._updateNowMenuItem = null;
         }
 
         /// <summary>
@@ -100,7 +97,14 @@ namespace PluginUpdater
         /// </summary>
         private async void OnUpdateNowClicked(object sender, EventArgs e)
         {
-            await this.StartUpdate(true);
+            try
+            {
+                await this.StartUpdate(true);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(StateStorage.Instance().Host.MainWindow, "Plugin update failed: " + ex.Message, StateStorage.Instance().Name, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         /// <summary>
@@ -123,14 +127,16 @@ namespace PluginUpdater
                 this._updateNowMenuItem.Enabled = false;
             }
 
-            this._updateTask = Task.Run(async delegate
-            {
-                await PluginManager.Instance().Execute(forceUpdate);
-            });
+            this._updateTask = PluginManager.Instance().Execute(forceUpdate);
 
             try
             {
                 await this._updateTask;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("PluginUpdater failed: {0}", ex);
+                throw;
             }
             finally
             {

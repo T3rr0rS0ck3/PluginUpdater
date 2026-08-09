@@ -54,13 +54,24 @@ namespace PluginUpdater
         /// <returns></returns>
         public async Task Execute(bool forceUpdate = false)
         {
-            this.updatedPlugins.Clear();
-            StateStorage.Instance().RestartRequired = false;
-            StateStorage.Instance().Settings.PluginList = getPluginList().ToList();
-            loadSettings();
-            await checkForPluginUpdates();
-            await updatePlugins(forceUpdate);
-            restartApplication();
+            try
+            {
+                this.updatedPlugins.Clear();
+                StateStorage.Instance().RestartRequired = false;
+                StateStorage.Instance().Settings.PluginList = getPluginList().ToList();
+                loadSettings();
+                await checkForPluginUpdates();
+                await updatePlugins(forceUpdate);
+                restartApplication();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("PluginUpdater execution failed: {0}", ex);
+                if (forceUpdate)
+                {
+                    throw;
+                }
+            }
         }
 
         /// <summary>
@@ -100,7 +111,17 @@ namespace PluginUpdater
 
             // Use reflection to access the private PluginManager property
             PropertyInfo pluginManagerProperty = typeof(MainForm).GetProperty("PluginManager", BindingFlags.NonPublic | BindingFlags.Instance);
+            if (pluginManagerProperty == null)
+            {
+                return plugins;
+            }
+
             object pluginManager = pluginManagerProperty.GetValue(StateStorage.Instance().Host.MainWindow);
+            if (pluginManager == null)
+            {
+                return plugins;
+            }
+
             Type pluginManagerType = pluginManager.GetType();
 
             // Use reflection to call the GetEnumerator method on the PluginManager
@@ -109,15 +130,30 @@ namespace PluginUpdater
             {
                 // Call the GetEnumerator method to get the enumerator for the plugins
                 object result = methodGetEnumerator.Invoke(pluginManager, null);
+                if (result == null)
+                {
+                    return plugins;
+                }
+
                 Type enumeratorType = result.GetType();
 
                 // Use reflection to call MoveNext on the enumerator
                 MethodInfo methodMoveNext = enumeratorType.GetMethod("MoveNext", BindingFlags.Public | BindingFlags.Instance);
+                PropertyInfo propertyCurrent = enumeratorType.GetProperty("Current", BindingFlags.Public | BindingFlags.Instance);
+                if (methodMoveNext == null || propertyCurrent == null)
+                {
+                    return plugins;
+                }
+
                 while ((bool)methodMoveNext.Invoke(result, null))
                 {
                     // Use reflection to get the Current property of the enumerator
-                    PropertyInfo propertyCurrent = enumeratorType.GetProperty("Current", BindingFlags.Public | BindingFlags.Instance);
                     object plugin = propertyCurrent.GetValue(result, null);
+                    if (plugin == null)
+                    {
+                        continue;
+                    }
+
                     Type pluginType = plugin.GetType();
 
                     // Use reflection to get the properties of the plugin
@@ -414,9 +450,18 @@ namespace PluginUpdater
                             string content = await response.Content.ReadAsStringAsync();
                             string[] splitContent = content.Split(new string[] { "\n" }, StringSplitOptions.RemoveEmptyEntries);
                             int index = splitContent.ToList().FindIndex(m => m.Contains(pluginInfo.Name));
+                            if (index < 0)
+                            {
+                                continue;
+                            }
 
                             string pluginVersionStr = splitContent[index];
                             string newVersionStr = pluginVersionStr.Split(':').LastOrDefault();
+                            if (string.IsNullOrEmpty(newVersionStr))
+                            {
+                                continue;
+                            }
+
                             Version newVersion = new Version(newVersionStr);
 
                             pluginInfo.LatestVersionStr = newVersionStr;
@@ -444,6 +489,15 @@ namespace PluginUpdater
             try
             {
                 SettingsItem settingsPlugin = DeserializeSettings(settings);
+                if (settingsPlugin.PluginList == null)
+                {
+                    settingsPlugin.PluginList = new List<PluginInfo>();
+                }
+
+                if (settingsPlugin.AdditionalSettings == null)
+                {
+                    settingsPlugin.AdditionalSettings = new AdditionalSettings();
+                }
 
                 // Update the download URLs for each plugin in the main plugin list
                 foreach (PluginInfo item in StateStorage.Instance().Settings.PluginList)
@@ -512,7 +566,11 @@ namespace PluginUpdater
         /// </summary>
         public void SetDownloadUrl(string pluginName, string downloadUrl)
         {
-            StateStorage.Instance().Settings.PluginList.FirstOrDefault(p => p.Name == pluginName).DownloadUrl = downloadUrl;
+            PluginInfo pluginInfo = StateStorage.Instance().Settings.PluginList.FirstOrDefault(p => p.Name == pluginName);
+            if (pluginInfo != null)
+            {
+                pluginInfo.DownloadUrl = downloadUrl;
+            }
         }
     }
 }
