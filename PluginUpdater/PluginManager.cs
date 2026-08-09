@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -134,13 +135,15 @@ namespace PluginUpdater
 
                 string downloadUrl = pluginInfo.DownloadUrl.Replace("<version>", pluginInfo.LatestVersionStr);
                 Uri downloadUri = new Uri(downloadUrl);
-                string filename = Path.GetFileName(downloadUri.LocalPath);
+                string filename = GetNormalizedArtifactFileName(downloadUri, pluginInfo.LatestVersionStr);
                 bool isZip = downloadUri.AbsolutePath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase);
                 try
                 {
                     using (HttpClient httpClient = new HttpClient())
                     {
                         byte[] pluginData = await httpClient.GetByteArrayAsync(downloadUrl);
+
+                        RemoveExistingPluginArtifacts(pluginDir, filename);
 
                         if (isZip)
                         {
@@ -169,6 +172,62 @@ namespace PluginUpdater
                     Console.WriteLine($"Error updating {pluginInfo.Name}: {ex.Message}");
                 }
             }
+        }
+
+        private static string GetNormalizedArtifactFileName(Uri downloadUri, string version)
+        {
+            string fileName = Path.GetFileName(downloadUri.LocalPath);
+            if (string.IsNullOrEmpty(fileName) || string.IsNullOrEmpty(version))
+            {
+                return fileName;
+            }
+
+            string extension = Path.GetExtension(fileName);
+            string nameWithoutExtension = Path.GetFileNameWithoutExtension(fileName);
+
+            if (nameWithoutExtension.EndsWith(version, StringComparison.OrdinalIgnoreCase))
+            {
+                nameWithoutExtension = nameWithoutExtension.Substring(0, nameWithoutExtension.Length - version.Length)
+                    .TrimEnd(' ', '-', '_', 'v', 'V');
+            }
+
+            return nameWithoutExtension + extension;
+        }
+
+        private static void RemoveExistingPluginArtifacts(string pluginDir, string newFileName)
+        {
+            string targetBaseName = NormalizeArtifactBaseName(newFileName);
+
+            foreach (string existingPath in Directory.GetFileSystemEntries(pluginDir))
+            {
+                string existingName = Path.GetFileName(existingPath);
+                string existingBaseName = NormalizeArtifactBaseName(existingName);
+
+                if (!string.Equals(existingBaseName, targetBaseName, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                if (Directory.Exists(existingPath))
+                {
+                    Directory.Delete(existingPath, true);
+                }
+                else if (File.Exists(existingPath))
+                {
+                    File.Delete(existingPath);
+                }
+            }
+        }
+
+        private static string NormalizeArtifactBaseName(string fileName)
+        {
+            string nameWithoutExtension = Path.GetFileNameWithoutExtension(fileName ?? string.Empty);
+            if (string.IsNullOrEmpty(nameWithoutExtension))
+            {
+                return string.Empty;
+            }
+
+            return Regex.Replace(nameWithoutExtension, @"([\s\-_]?v?\d+(?:\.\d+){1,4})$", string.Empty, RegexOptions.IgnoreCase).TrimEnd(' ', '-', '_');
         }
 
         private static void ExtractZipFile(string zipFilePath, string destinationDirectory)
