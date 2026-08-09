@@ -1,4 +1,5 @@
 ﻿using KeePass.Plugins;
+using KeePass.Plugins;
 using System;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -53,6 +54,11 @@ namespace PluginUpdater
         /// </summary>
         public override void Terminate()
         {
+            if (StateStorage.Instance().Host != null && StateStorage.Instance().Host.MainWindow != null)
+            {
+                StateStorage.Instance().Host.MainWindow.UIStateUpdated -= MainWindow_UIStateUpdated;
+            }
+
             if (this._updateTask != null)
             {
                 this._updateTask.Dispose();
@@ -64,7 +70,7 @@ namespace PluginUpdater
         /// </summary>
         private async void MainWindow_UIStateUpdated(object sender, EventArgs e)
         {
-            await this.StartUpdate(false);
+            await this.RunOnUiThreadAsync(false);
         }
 
         /// <summary>
@@ -106,7 +112,40 @@ namespace PluginUpdater
         /// </summary>
         private async void OnUpdateNowClicked(object sender, EventArgs e)
         {
-            await this.StartUpdate(true);
+            await this.RunOnUiThreadAsync(true);
+        }
+
+        /// <summary>
+        /// Ensures the update workflow runs on the KeePass UI thread.
+        /// </summary>
+        private Task RunOnUiThreadAsync(bool forceUpdate)
+        {
+            if (StateStorage.Instance().Host == null || StateStorage.Instance().Host.MainWindow == null)
+            {
+                return this.StartUpdate(forceUpdate);
+            }
+
+            Form mainWindow = StateStorage.Instance().Host.MainWindow;
+            if (!mainWindow.InvokeRequired)
+            {
+                return this.StartUpdate(forceUpdate);
+            }
+
+            TaskCompletionSource<bool> completionSource = new TaskCompletionSource<bool>();
+            mainWindow.BeginInvoke(new Action(async delegate
+            {
+                try
+                {
+                    await this.StartUpdate(forceUpdate);
+                    completionSource.SetResult(true);
+                }
+                catch (Exception ex)
+                {
+                    completionSource.SetException(ex);
+                }
+            }));
+
+            return completionSource.Task;
         }
 
         /// <summary>
