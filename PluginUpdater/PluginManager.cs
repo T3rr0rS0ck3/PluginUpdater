@@ -259,7 +259,7 @@ namespace PluginUpdater
                         Console.WriteLine("Updated {0} to version {1}", pluginInfo.Name, pluginInfo.CurrentVersionStr);
                         if (isPlgx)
                         {
-                            ClearPluginCache(pluginInfo.Name, filename);
+                            ClearPluginCache(pluginInfo.Name, filename, IsPluginUpdater(pluginInfo));
                         }
 
                         StateStorage.Instance().RestartRequired = true; // Indicate that a restart is required to apply the update
@@ -275,7 +275,7 @@ namespace PluginUpdater
         /// <summary>
         /// Removes the KeePass PLGX cache folder for the specified plugin so the updated package is compiled on next start.
         /// </summary>
-        private static void ClearPluginCache(string pluginName, string artifactFileName)
+        private static void ClearPluginCache(string pluginName, string artifactFileName, bool keepCurrentAssemblyCache)
         {
             if (string.IsNullOrEmpty(pluginName) && string.IsNullOrEmpty(artifactFileName))
             {
@@ -296,6 +296,11 @@ namespace PluginUpdater
 
             foreach (string cacheDirectory in Directory.GetDirectories(pluginCacheDir))
             {
+                if (keepCurrentAssemblyCache && IsCurrentAssemblyCacheDirectory(cacheDirectory))
+                {
+                    continue;
+                }
+
                 if (!CacheDirectoryBelongsToPlugin(cacheDirectory, pluginName, artifactFileName))
                 {
                     continue;
@@ -303,6 +308,33 @@ namespace PluginUpdater
 
                 TryDeleteDirectory(cacheDirectory);
             }
+        }
+
+        /// <summary>
+        /// Returns whether the plugin info represents PluginUpdater itself.
+        /// </summary>
+        private static bool IsPluginUpdater(PluginInfo pluginInfo)
+        {
+            return pluginInfo != null && string.Equals(pluginInfo.Name, StateStorage.Instance().Name, StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Returns whether the cache directory is the one currently executing this assembly.
+        /// </summary>
+        private static bool IsCurrentAssemblyCacheDirectory(string cacheDirectory)
+        {
+            string assemblyLocation = Assembly.GetExecutingAssembly().Location;
+            if (string.IsNullOrEmpty(assemblyLocation))
+            {
+                return false;
+            }
+
+            string assemblyDirectory = Path.GetFullPath(Path.GetDirectoryName(assemblyLocation) ?? string.Empty)
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            string candidateDirectory = Path.GetFullPath(cacheDirectory)
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+            return string.Equals(assemblyDirectory, candidateDirectory, StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>
