@@ -259,7 +259,7 @@ namespace PluginUpdater
                         Console.WriteLine("Updated {0} to version {1}", pluginInfo.Name, pluginInfo.CurrentVersionStr);
                         if (isPlgx)
                         {
-                            ClearPluginCache(pluginInfo.Name, filename, IsPluginUpdater(pluginInfo));
+                            ClearPluginCache();
                         }
 
                         StateStorage.Instance().RestartRequired = true; // Indicate that a restart is required to apply the update
@@ -273,15 +273,10 @@ namespace PluginUpdater
         }
 
         /// <summary>
-        /// Removes the KeePass PLGX cache folder for the specified plugin so the updated package is compiled on next start.
+        /// Removes the KeePass PLGX cache so updated packages are compiled on next start.
         /// </summary>
-        private static void ClearPluginCache(string pluginName, string artifactFileName, bool keepCurrentAssemblyCache)
+        private static void ClearPluginCache()
         {
-            if (string.IsNullOrEmpty(pluginName) && string.IsNullOrEmpty(artifactFileName))
-            {
-                return;
-            }
-
             string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             if (string.IsNullOrEmpty(localAppData))
             {
@@ -294,80 +289,7 @@ namespace PluginUpdater
                 return;
             }
 
-            foreach (string cacheDirectory in Directory.GetDirectories(pluginCacheDir))
-            {
-                if (keepCurrentAssemblyCache && IsCurrentAssemblyCacheDirectory(cacheDirectory))
-                {
-                    continue;
-                }
-
-                if (!CacheDirectoryBelongsToPlugin(cacheDirectory, pluginName, artifactFileName))
-                {
-                    continue;
-                }
-
-                TryDeleteDirectory(cacheDirectory);
-            }
-        }
-
-        /// <summary>
-        /// Returns whether the plugin info represents PluginUpdater itself.
-        /// </summary>
-        private static bool IsPluginUpdater(PluginInfo pluginInfo)
-        {
-            return pluginInfo != null && string.Equals(pluginInfo.Name, StateStorage.Instance().Name, StringComparison.OrdinalIgnoreCase);
-        }
-
-        /// <summary>
-        /// Returns whether the cache directory is the one currently executing this assembly.
-        /// </summary>
-        private static bool IsCurrentAssemblyCacheDirectory(string cacheDirectory)
-        {
-            string assemblyLocation = Assembly.GetExecutingAssembly().Location;
-            if (string.IsNullOrEmpty(assemblyLocation))
-            {
-                return false;
-            }
-
-            string assemblyDirectory = Path.GetFullPath(Path.GetDirectoryName(assemblyLocation) ?? string.Empty)
-                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-            string candidateDirectory = Path.GetFullPath(cacheDirectory)
-                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-
-            return string.Equals(assemblyDirectory, candidateDirectory, StringComparison.OrdinalIgnoreCase);
-        }
-
-        /// <summary>
-        /// Returns whether a top-level KeePass cache directory contains the compiled plugin DLL.
-        /// </summary>
-        private static bool CacheDirectoryBelongsToPlugin(string cacheDirectory, string pluginName, string artifactFileName)
-        {
-            string artifactBaseName = Path.GetFileNameWithoutExtension(artifactFileName ?? string.Empty);
-            List<string> expectedDllNames = new List<string>();
-
-            if (!string.IsNullOrEmpty(artifactBaseName))
-            {
-                expectedDllNames.Add(artifactBaseName + ".dll");
-            }
-
-            if (!string.IsNullOrEmpty(pluginName))
-            {
-                expectedDllNames.Add(pluginName + ".dll");
-            }
-
-            foreach (string filePath in Directory.GetFiles(cacheDirectory, "*.dll", SearchOption.AllDirectories))
-            {
-                string fileName = Path.GetFileName(filePath);
-                foreach (string expectedDllName in expectedDllNames)
-                {
-                    if (string.Equals(fileName, expectedDllName, StringComparison.OrdinalIgnoreCase))
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            return false;
+            TryDeleteDirectory(pluginCacheDir);
         }
 
         private static void TryDeleteDirectory(string directoryPath)
