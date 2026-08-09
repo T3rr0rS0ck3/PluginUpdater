@@ -70,7 +70,7 @@ namespace PluginUpdater
         /// </summary>
         private async void MainWindow_UIStateUpdated(object sender, EventArgs e)
         {
-            await this.RunOnUiThreadAsync(false);
+            await this.StartUpdate(false);
         }
 
         /// <summary>
@@ -112,40 +112,7 @@ namespace PluginUpdater
         /// </summary>
         private async void OnUpdateNowClicked(object sender, EventArgs e)
         {
-            await this.RunOnUiThreadAsync(true);
-        }
-
-        /// <summary>
-        /// Ensures the update workflow runs on the KeePass UI thread.
-        /// </summary>
-        private Task RunOnUiThreadAsync(bool forceUpdate)
-        {
-            if (StateStorage.Instance().Host == null || StateStorage.Instance().Host.MainWindow == null)
-            {
-                return this.StartUpdate(forceUpdate);
-            }
-
-            Form mainWindow = StateStorage.Instance().Host.MainWindow;
-            if (!mainWindow.InvokeRequired)
-            {
-                return this.StartUpdate(forceUpdate);
-            }
-
-            TaskCompletionSource<bool> completionSource = new TaskCompletionSource<bool>();
-            mainWindow.BeginInvoke(new Action(async delegate
-            {
-                try
-                {
-                    await this.StartUpdate(forceUpdate);
-                    completionSource.SetResult(true);
-                }
-                catch (Exception ex)
-                {
-                    completionSource.SetException(ex);
-                }
-            }));
-
-            return completionSource.Task;
+            await this.StartUpdate(true);
         }
 
         /// <summary>
@@ -163,7 +130,10 @@ namespace PluginUpdater
                 this._updateNowMenuItem.Enabled = false;
             }
 
-            this._updateTask = PluginManager.Instance().Execute(forceUpdate);
+            this._updateTask = Task.Run(async delegate
+            {
+                await PluginManager.Instance().Execute(forceUpdate);
+            });
 
             try
             {
