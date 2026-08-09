@@ -83,11 +83,21 @@ jobs:
       run: |
         $keepassExe = Join-Path $env:GITHUB_WORKSPACE 'dlls\KeePass.exe'
         $pluginSourceDir = Join-Path $env:GITHUB_WORKSPACE 'PluginUpdater'
+        $plgxLog = Join-Path $env:GITHUB_WORKSPACE 'plgx-build.log'
 
-        & $keepassExe --plgx-create $pluginSourceDir --plgx-prereq-kp:2.58 --plgx-prereq-net:4.8
+        & $keepassExe --debug --plgx-create $pluginSourceDir --plgx-prereq-kp:2.58 --plgx-prereq-net:4.8 2>&1 | Tee-Object -FilePath $plgxLog
 
-        $plgx = Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse -Filter *.plgx | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+        if ($LASTEXITCODE -ne 0) {
+          throw "KeePass PLGX build failed with exit code $LASTEXITCODE. See $plgxLog for details."
+        }
+
+        $plgx = Get-ChildItem -Path $env:GITHUB_WORKSPACE, $env:RUNNER_TEMP -Recurse -Filter *.plgx -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending | Select-Object -First 1
         if (-not $plgx) {
+          if (Test-Path $plgxLog) {
+            Write-Host '--- KeePass PLGX build log ---'
+            Get-Content $plgxLog | ForEach-Object { Write-Host $_ }
+            Write-Host '--- End KeePass PLGX build log ---'
+          }
           throw 'PLGX file was not created.'
         }
 
