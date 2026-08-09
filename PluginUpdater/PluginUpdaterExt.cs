@@ -1,4 +1,5 @@
 ﻿using KeePass.Plugins;
+using KeePass.Forms;
 using System;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -12,6 +13,7 @@ namespace PluginUpdater
     {
         private Task _updateTask;
         private ToolStripMenuItem _updateNowMenuItem;
+        private bool _automaticUpdateStarted;
 
         /// <summary>
         /// Gets the update URL used by KeePass to check for new PluginUpdater releases.
@@ -33,6 +35,11 @@ namespace PluginUpdater
             }
 
             StateStorage.Instance().Host = host;
+            if (host.MainWindow != null)
+            {
+                host.MainWindow.Shown += this.MainWindow_Shown;
+                host.MainWindow.FileOpened += this.MainWindow_FileOpened;
+            }
 
             return true;
         }
@@ -45,8 +52,70 @@ namespace PluginUpdater
         /// </summary>
         public override void Terminate()
         {
+            if (StateStorage.Instance().Host != null && StateStorage.Instance().Host.MainWindow != null)
+            {
+                StateStorage.Instance().Host.MainWindow.Shown -= this.MainWindow_Shown;
+                StateStorage.Instance().Host.MainWindow.FileOpened -= this.MainWindow_FileOpened;
+            }
+
             this._updateTask = null;
             this._updateNowMenuItem = null;
+        }
+
+        /// <summary>
+        /// Starts automatic updates after KeePass has finished showing its main window.
+        /// </summary>
+        private void MainWindow_Shown(object sender, EventArgs e)
+        {
+            Form mainWindow = sender as Form;
+            if (mainWindow != null)
+            {
+                mainWindow.Shown -= this.MainWindow_Shown;
+            }
+
+            if (StateStorage.Instance().Host != null &&
+                StateStorage.Instance().Host.Database != null &&
+                StateStorage.Instance().Host.Database.IsOpen)
+            {
+                this.StartAutomaticUpdate();
+            }
+        }
+
+        /// <summary>
+        /// Starts automatic updates when KeePass opens a database.
+        /// </summary>
+        private void MainWindow_FileOpened(object sender, FileOpenedEventArgs e)
+        {
+            this.StartAutomaticUpdate();
+        }
+
+        /// <summary>
+        /// Runs one automatic update check after a database has been opened.
+        /// </summary>
+        private async void StartAutomaticUpdate()
+        {
+            if (this._automaticUpdateStarted)
+            {
+                return;
+            }
+
+            this._automaticUpdateStarted = true;
+
+            try
+            {
+                if (StateStorage.Instance().Host == null ||
+                    StateStorage.Instance().Host.Database == null ||
+                    !StateStorage.Instance().Host.Database.IsOpen)
+                {
+                    return;
+                }
+
+                await this.StartUpdate(false);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("PluginUpdater automatic update failed: {0}", ex);
+            }
         }
 
         /// <summary>
