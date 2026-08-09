@@ -1,4 +1,5 @@
 ﻿using KeePass.Plugins;
+using KeePass.Plugins;
 using System;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -32,15 +33,7 @@ namespace PluginUpdater
                 return false;
             }
 
-            StateStorage.Instance().SettingsForm = new Settings
-            {
-                StartPosition = System.Windows.Forms.FormStartPosition.CenterParent,
-                Text = StateStorage.Instance().Name + " Settings"
-            };
-
             StateStorage.Instance().Host = host;
-
-            StateStorage.Instance().Host.MainWindow.UIStateUpdated += MainWindow_UIStateUpdated;
 
             return true;
         }
@@ -57,14 +50,6 @@ namespace PluginUpdater
             {
                 this._updateTask.Dispose();
             }
-        }
-
-        /// <summary>
-        /// Starts an automatic update check when the KeePass UI state changes.
-        /// </summary>
-        private async void MainWindow_UIStateUpdated(object sender, EventArgs e)
-        {
-            await this.StartUpdate(false);
         }
 
         /// <summary>
@@ -98,6 +83,15 @@ namespace PluginUpdater
         /// </summary>
         private void OnOptionsClicked(object sender, EventArgs e)
         {
+            if (StateStorage.Instance().SettingsForm == null)
+            {
+                StateStorage.Instance().SettingsForm = new Settings
+                {
+                    StartPosition = System.Windows.Forms.FormStartPosition.CenterParent,
+                    Text = StateStorage.Instance().Name + " Settings"
+                };
+            }
+
             StateStorage.Instance().SettingsForm.ShowDialog(StateStorage.Instance().Host.MainWindow);
         }
 
@@ -114,6 +108,11 @@ namespace PluginUpdater
         /// </summary>
         private async Task StartUpdate(bool forceUpdate)
         {
+            if (!forceUpdate && (StateStorage.Instance().Host == null || StateStorage.Instance().Host.Database == null))
+            {
+                return;
+            }
+
             if (this._updateTask != null && !this._updateTask.IsCompleted)
             {
                 return;
@@ -124,7 +123,10 @@ namespace PluginUpdater
                 this._updateNowMenuItem.Enabled = false;
             }
 
-            this._updateTask = PluginManager.Instance().Execute(forceUpdate);
+            this._updateTask = Task.Run(async delegate
+            {
+                await PluginManager.Instance().Execute(forceUpdate);
+            });
 
             try
             {

@@ -72,6 +72,25 @@ namespace PluginUpdater
         /// </summary>
         private IList<PluginInfo> getPluginList()
         {
+            if (StateStorage.Instance().Host == null || StateStorage.Instance().Host.MainWindow == null)
+            {
+                return Enumerable.Empty<PluginInfo>().ToList();
+            }
+
+            Form mainWindow = StateStorage.Instance().Host.MainWindow;
+            if (mainWindow.InvokeRequired)
+            {
+                return (IList<PluginInfo>)mainWindow.Invoke(new Func<IList<PluginInfo>>(getPluginList));
+            }
+
+            return getPluginListInternal();
+        }
+
+        /// <summary>
+        /// Collects the currently loaded KeePass plugins on the UI thread.
+        /// </summary>
+        private IList<PluginInfo> getPluginListInternal()
+        {
             List<PluginInfo> plugins = new List<PluginInfo>();
 
             if (StateStorage.Instance().Host == null)
@@ -341,12 +360,32 @@ namespace PluginUpdater
         {
             if (StateStorage.Instance().RestartRequired && StateStorage.Instance().Settings.AdditionalSettings.ShowUpdateNotification)
             {
-                DialogResult dialogResult = MessageBox.Show("The following plugins have been updated: " + string.Join(", ", this.updatedPlugins) + ". The application must be restarted for the updates to take effect", "Restart Required", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                ShowRestartNotification();
+            }
+        }
+
+        /// <summary>
+        /// Shows the restart notification on the KeePass UI thread.
+        /// </summary>
+        private void ShowRestartNotification()
+        {
+            if (StateStorage.Instance().Host == null || StateStorage.Instance().Host.MainWindow == null)
+            {
+                return;
+            }
+
+            Form mainWindow = StateStorage.Instance().Host.MainWindow;
+            if (mainWindow.InvokeRequired)
+            {
+                mainWindow.Invoke(new Action(ShowRestartNotification));
+                return;
+            }
+
+            DialogResult dialogResult = MessageBox.Show("The following plugins have been updated: " + string.Join(", ", this.updatedPlugins) + ". The application must be restarted for the updates to take effect", "Restart Required", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 if (dialogResult != DialogResult.OK)
                 {
                     return; // User chose not to restart
                 }
-            }
         }
 
 
