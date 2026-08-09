@@ -38,6 +38,7 @@ namespace PluginUpdater
         {
             this.dataGridView1.DataSource = StateStorage.Instance().Settings.PluginList;
             this.cbEnableUpdate.Checked = StateStorage.Instance().Settings.AdditionalSettings.IsUpdateEnabled;
+            this.cbEnableNotification.Checked = StateStorage.Instance().Settings.AdditionalSettings.ShowUpdateNotification;
         }
 
         private void cbEnableUpdate_CheckedChanged(object sender, EventArgs e)
