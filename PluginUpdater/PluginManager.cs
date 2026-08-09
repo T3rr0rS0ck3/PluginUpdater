@@ -21,8 +21,6 @@ namespace PluginUpdater
     public class PluginManager
     {
         private const string PluginUpdaterDownloadUrl = "https://github.com/T3rr0rS0ck3/PluginUpdater/releases/download/<version>/PluginUpdater.plgx";
-        private const string SkipAutomaticUpdateOnceConfigKey = "PluginUpdater.SkipAutomaticUpdateOnce";
-        private const string LastLoadedVersionConfigKey = "PluginUpdater.LastLoadedVersion";
         private static PluginManager _instance;
         private static readonly object _lock = new object();
         private IList<string> updatedPlugins = new List<string>();
@@ -262,7 +260,6 @@ namespace PluginUpdater
                         if (isPlgx)
                         {
                             ClearPluginCache(pluginInfo.Name, filename);
-                            MarkSkipAutomaticUpdateOnce();
                         }
 
                         StateStorage.Instance().RestartRequired = true; // Indicate that a restart is required to apply the update
@@ -272,90 +269,6 @@ namespace PluginUpdater
                 {
                     Console.WriteLine("Error updating {0}: {1}", pluginInfo.Name, ex.Message);
                 }
-            }
-        }
-
-        /// <summary>
-        /// Marks that the next automatic update check should be skipped after a PLGX cache reset.
-        /// </summary>
-        private static void MarkSkipAutomaticUpdateOnce()
-        {
-            if (StateStorage.Instance().Host == null)
-            {
-                return;
-            }
-
-            StateStorage.Instance().Host.CustomConfig.SetBool(SkipAutomaticUpdateOnceConfigKey, true);
-            SaveKeePassConfig();
-        }
-
-        /// <summary>
-        /// Returns true once after a PLGX update to avoid immediately updating again on the first restart.
-        /// </summary>
-        public bool ConsumeSkipAutomaticUpdateOnce()
-        {
-            if (StateStorage.Instance().Host == null)
-            {
-                return false;
-            }
-
-            bool skipAutomaticUpdate = StateStorage.Instance().Host.CustomConfig.GetBool(SkipAutomaticUpdateOnceConfigKey, false);
-            if (!skipAutomaticUpdate)
-            {
-                return false;
-            }
-
-            StateStorage.Instance().Host.CustomConfig.SetBool(SkipAutomaticUpdateOnceConfigKey, false);
-            SaveKeePassConfig();
-            return true;
-        }
-
-        /// <summary>
-        /// Returns true when automatic update should be skipped during startup.
-        /// </summary>
-        public bool ConsumeStartupAutomaticUpdateSkip()
-        {
-            bool skipAfterPluginUpdate = ConsumeSkipAutomaticUpdateOnce();
-            bool skipAfterVersionChange = ConsumeFirstRunAfterVersionChange();
-            return skipAfterPluginUpdate || skipAfterVersionChange;
-        }
-
-        /// <summary>
-        /// Skips the automatic update once when KeePass loads a different PluginUpdater assembly version.
-        /// </summary>
-        private static bool ConsumeFirstRunAfterVersionChange()
-        {
-            if (StateStorage.Instance().Host == null)
-            {
-                return false;
-            }
-
-            Version currentVersion = Assembly.GetExecutingAssembly().GetName().Version;
-            string currentVersionString = currentVersion != null ? currentVersion.ToString() : string.Empty;
-            if (string.IsNullOrEmpty(currentVersionString))
-            {
-                return false;
-            }
-
-            string lastLoadedVersionString = StateStorage.Instance().Host.CustomConfig.GetString(LastLoadedVersionConfigKey, string.Empty);
-            if (string.Equals(lastLoadedVersionString, currentVersionString, StringComparison.OrdinalIgnoreCase))
-            {
-                return false;
-            }
-
-            StateStorage.Instance().Host.CustomConfig.SetString(LastLoadedVersionConfigKey, currentVersionString);
-            SaveKeePassConfig();
-            return true;
-        }
-
-        /// <summary>
-        /// Saves KeePass configuration when a custom PluginUpdater flag changes.
-        /// </summary>
-        private static void SaveKeePassConfig()
-        {
-            if (StateStorage.Instance().Host != null && StateStorage.Instance().Host.MainWindow != null)
-            {
-                StateStorage.Instance().Host.MainWindow.SaveConfig();
             }
         }
 

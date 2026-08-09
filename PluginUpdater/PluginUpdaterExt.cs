@@ -13,6 +13,7 @@ namespace PluginUpdater
         private Task _updateTask;
         private ToolStripMenuItem _updateNowMenuItem;
         private bool _automaticUpdateStarted;
+        private bool _terminated;
 
         /// <summary>
         /// Gets the update URL used by KeePass to check for new PluginUpdater releases.
@@ -57,6 +58,7 @@ namespace PluginUpdater
 
             this._updateTask = null;
             this._updateNowMenuItem = null;
+            this._terminated = true;
         }
 
         /// <summary>
@@ -87,18 +89,42 @@ namespace PluginUpdater
 
             try
             {
-                if (PluginManager.Instance().ConsumeStartupAutomaticUpdateSkip())
+                if (!await this.WaitForOpenDatabase())
                 {
                     return;
                 }
 
-                await Task.Delay(5000);
                 await this.StartUpdate(false);
             }
             catch (Exception ex)
             {
                 Console.WriteLine("PluginUpdater automatic update failed: {0}", ex);
             }
+        }
+
+        /// <summary>
+        /// Waits until a KeePass database is open before running automatic updates.
+        /// </summary>
+        private async Task<bool> WaitForOpenDatabase()
+        {
+            for (int attempt = 0; attempt < 120; attempt++)
+            {
+                if (this._terminated)
+                {
+                    return false;
+                }
+
+                if (StateStorage.Instance().Host != null &&
+                    StateStorage.Instance().Host.Database != null &&
+                    StateStorage.Instance().Host.Database.IsOpen)
+                {
+                    return true;
+                }
+
+                await Task.Delay(5000);
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -165,6 +191,11 @@ namespace PluginUpdater
         private async Task StartUpdate(bool forceUpdate)
         {
             if (StateStorage.Instance().Host == null || StateStorage.Instance().Host.MainWindow == null)
+            {
+                return;
+            }
+
+            if (!forceUpdate && (StateStorage.Instance().Host.Database == null || !StateStorage.Instance().Host.Database.IsOpen))
             {
                 return;
             }
