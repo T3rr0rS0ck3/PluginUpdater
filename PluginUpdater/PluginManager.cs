@@ -230,7 +230,6 @@ namespace PluginUpdater
                 Uri downloadUri = new Uri(downloadUrl);
                 string filename = GetNormalizedArtifactFileName(downloadUri, pluginInfo.LatestVersionStr);
                 bool isZip = downloadUri.AbsolutePath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase);
-                bool isPlgx = downloadUri.AbsolutePath.EndsWith(".plgx", StringComparison.OrdinalIgnoreCase);
                 try
                 {
                     using (HttpClient httpClient = new HttpClient())
@@ -257,10 +256,6 @@ namespace PluginUpdater
                         this.updatedPlugins.Add(pluginInfo.Name); // Add to the list of updated plugins
 
                         Console.WriteLine("Updated {0} to version {1}", pluginInfo.Name, pluginInfo.CurrentVersionStr);
-                        if (isPlgx)
-                        {
-                            ClearPluginCache();
-                        }
 
                         StateStorage.Instance().RestartRequired = true; // Indicate that a restart is required to apply the update
                     }
@@ -269,38 +264,6 @@ namespace PluginUpdater
                 {
                     Console.WriteLine("Error updating {0}: {1}", pluginInfo.Name, ex.Message);
                 }
-            }
-        }
-
-        /// <summary>
-        /// Removes the KeePass PLGX cache so updated packages are compiled on next start.
-        /// </summary>
-        private static void ClearPluginCache()
-        {
-            string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            if (string.IsNullOrEmpty(localAppData))
-            {
-                return;
-            }
-
-            string pluginCacheDir = Path.Combine(localAppData, "KeePass", "PluginCache");
-            if (!Directory.Exists(pluginCacheDir))
-            {
-                return;
-            }
-
-            TryDeleteDirectory(pluginCacheDir);
-        }
-
-        private static void TryDeleteDirectory(string directoryPath)
-        {
-            try
-            {
-                Directory.Delete(directoryPath, true);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Could not delete plugin cache directory {0}: {1}", directoryPath, ex.Message);
             }
         }
 
