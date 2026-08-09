@@ -87,6 +87,11 @@ namespace PluginUpdater
 
             try
             {
+                if (PluginManager.Instance().ConsumeSkipAutomaticUpdateOnce())
+                {
+                    return;
+                }
+
                 await Task.Delay(5000);
                 await this.StartUpdate(false);
             }

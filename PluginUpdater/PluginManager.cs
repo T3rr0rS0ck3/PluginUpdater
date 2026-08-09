@@ -21,6 +21,7 @@ namespace PluginUpdater
     public class PluginManager
     {
         private const string PluginUpdaterDownloadUrl = "https://github.com/T3rr0rS0ck3/PluginUpdater/releases/download/<version>/PluginUpdater.plgx";
+        private const string SkipAutomaticUpdateOnceConfigKey = "PluginUpdater.SkipAutomaticUpdateOnce";
         private static PluginManager _instance;
         private static readonly object _lock = new object();
         private IList<string> updatedPlugins = new List<string>();
@@ -260,6 +261,7 @@ namespace PluginUpdater
                         if (isPlgx)
                         {
                             ClearPluginCache(pluginInfo.Name, filename);
+                            MarkSkipAutomaticUpdateOnce();
                         }
 
                         StateStorage.Instance().RestartRequired = true; // Indicate that a restart is required to apply the update
@@ -270,6 +272,47 @@ namespace PluginUpdater
                     Console.WriteLine("Error updating {0}: {1}", pluginInfo.Name, ex.Message);
                 }
             }
+        }
+
+        /// <summary>
+        /// Marks that the next automatic update check should be skipped after a PLGX cache reset.
+        /// </summary>
+        private static void MarkSkipAutomaticUpdateOnce()
+        {
+            if (StateStorage.Instance().Host == null)
+            {
+                return;
+            }
+
+            StateStorage.Instance().Host.CustomConfig.SetBool(SkipAutomaticUpdateOnceConfigKey, true);
+            if (StateStorage.Instance().Host.MainWindow != null)
+            {
+                StateStorage.Instance().Host.MainWindow.SaveConfig();
+            }
+        }
+
+        /// <summary>
+        /// Returns true once after a PLGX update to avoid immediately updating again on the first restart.
+        /// </summary>
+        public bool ConsumeSkipAutomaticUpdateOnce()
+        {
+            if (StateStorage.Instance().Host == null)
+            {
+                return false;
+            }
+
+            bool skipAutomaticUpdate = StateStorage.Instance().Host.CustomConfig.GetBool(SkipAutomaticUpdateOnceConfigKey, false);
+            if (!skipAutomaticUpdate)
+            {
+                return false;
+            }
+
+            StateStorage.Instance().Host.CustomConfig.SetBool(SkipAutomaticUpdateOnceConfigKey, false);
+            if (StateStorage.Instance().Host.MainWindow != null)
+            {
+                StateStorage.Instance().Host.MainWindow.SaveConfig();
+            }
+            return true;
         }
 
         /// <summary>
