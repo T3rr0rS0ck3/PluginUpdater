@@ -118,7 +118,7 @@ jobs:
         [void]$releaseNotes.AppendLine("")
 
         if ($previousTag) {
-          [void]$releaseNotes.AppendLine("Changes since $previousTag:")
+          [void]$releaseNotes.AppendLine("Changes since " + $previousTag + ":")
           [void]$releaseNotes.AppendLine("")
           $commits = git log "$previousTag..HEAD" --pretty=format:"- %s (%h)"
         }
